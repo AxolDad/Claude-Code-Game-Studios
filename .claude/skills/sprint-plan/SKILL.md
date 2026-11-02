@@ -178,7 +178,8 @@ story of its own.
    loop, a feature working end to end, a playtest) needs the scene or level it
    runs in and the setting that starts it: `run/main_scene` in `project.godot`,
    the scene list in Unity's `ProjectSettings/EditorBuildSettings.asset`, or
-   `GameDefaultMap` in Unreal's `Config/DefaultEngine.ini`. Add any file, scene
+   `GameDefaultMap` in Unreal's `Config/DefaultEngine.ini`. On Bevy it is the
+   plugin or `Startup` system in `src/` that spawns it. Add any file, scene
    or system that a picked story's acceptance criteria, notes or dependencies
    name and no picked story creates. A goal with nothing to run or show (logic
    and tests only) needs none.
@@ -187,7 +188,8 @@ story of its own.
    `project.yaml`): `*.tscn` for Godot, `Assets/**/*.unity` for Unity,
    `Content/**/*.umap` for Unreal. Find anything else by the path or name the
    stories use. With no engine set, check by name only and say the scene search
-   did not run.
+   did not run. On Bevy a scene is Rust code or a `bsn!` macro, with no scene file
+   to find: check by name in `src/`, and say the same.
 4. **Fill in the Goal Prerequisites section**: each need with `exists`,
    `built by [story ID]` or **missing**, or the single row "None: the goal has
    nothing to run or show". Copy each missing one into Risks. When you present

@@ -22,7 +22,7 @@ No gate IDs assigned.
 **Input:** The UX spec at `design/ux/inventory-flow.md` defines five slot states: default, hover, selected, empty-slot, locked-slot. Request: "Implement the inventory screen from the UX spec in `design/ux/inventory-flow.md`."
 **Expected behavior:**
 - Reads the UX spec before producing any code
-- Produces implementation using the project's configured UI framework (UI Toolkit, UGUI, UMG, or Godot Control nodes)
+- Produces implementation using the project's configured UI framework (UI Toolkit, UGUI, UMG, Godot Control nodes, or Bevy `bevy_ui` and Feathers)
 - Implements every state the spec defines (default, hover, selected, empty-slot, locked-slot) — none dropped, none invented
 - Binds inventory data to UI elements via the project's data model, not hardcoded values
 - Includes doc comments on public UI API per coding standards

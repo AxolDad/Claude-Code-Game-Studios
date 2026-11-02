@@ -34,7 +34,7 @@ gitignore-style and case-insensitively (observed; the docs do not say), so
 `Assets/**/UI/**` also matches a Godot project's `assets/ui/` art. That is why
 the Unity and Unreal code globs below name their file types.
 
-Paths are listed Godot · Unity · Unreal. Folder names are shown in one case;
+Paths are listed Godot and Bevy · Unity · Unreal. Folder names are shown in one case;
 each rule's own globs list the case variants (`{AI,Ai,ai}`).
 
 | Rule File | Path Pattern | Enforces |
@@ -49,23 +49,25 @@ each rule's own globs list the case variants (`{AI,Ai,ai}`).
 | `data-files.md` | `assets/data/**/*.json` · `Assets/**/Data/**/*.json` · `Content/**/Data/**/*.json` | JSON validity, naming conventions, schema rules |
 | `test-standards.md` | `tests/**` · `Assets/Tests/**/*.cs` · `Source/**/Tests/**/*.{h,cpp}` | Test naming, coverage requirements, fixture patterns |
 | `prototype-code.md` | `prototypes/**` | Relaxed standards, README required, hypothesis documented |
-| `shader-code.md` | `assets/shaders/**`, `**/*.gdshader` · `Assets/**/*.{shader,hlsl,cginc,compute,shadergraph}` · `Shaders/**`, `**/*.{usf,ush}` | Naming conventions, performance targets, cross-platform rules |
-| `scene-files.md` | `**/*.tscn`, `**/*.tres` · `**/*.unity`, `**/*.prefab`, `Assets/**/*.asset` · — | Hand-edit limits for editor-written scene and asset files; Unreal `.uasset`/`.umap` are binary, and `settings.json` denies edits to them |
+| `shader-code.md` | `assets/shaders/**`, `**/*.gdshader`, `**/*.{wesl,wgsl}` · `Assets/**/*.{shader,hlsl,cginc,compute,shadergraph}` · `Shaders/**`, `**/*.{usf,ush}` | Naming conventions, performance targets, cross-platform rules |
+| `scene-files.md` | `**/*.tscn`, `**/*.tres` · `**/*.unity`, `**/*.prefab`, `Assets/**/*.asset` · — | Hand-edit limits for editor-written scene and asset files; Unreal `.uasset`/`.umap` are binary, and `settings.json` denies edits to them; Bevy has no matching scene file |
 | `agent-memory.md` | `.claude/agent-memory/**` | The one place an agent may write unasked — and why a temporary absence must never be recorded as a durable fact |
 | `skill-authoring.md` | `.claude/skills/**`, `.claude/agents/**` | A check must be able to report that it did not run — the five obligations for verdicts, defaults, skips, sourcing and derived coverage |
 
-Each engine-facing rule loads on all three engines:
+Each engine-facing rule loads on every engine:
 
 - **Code rules** (`gameplay`, `engine`, `ai`, `network`, `ui`) match
   `Assets/**/<System>/**/*.cs` and `Source/**/<System>/**/*.{h,cpp}` (`Core`,
-  `AI`, `Networking`/`Network`, `UI` for the others).
+  `AI`, `Networking`/`Network`, `UI` for the others). Bevy's Rust matches the
+  `src/<system>/**` globs.
 - **`data-files.md`** matches `Assets/**/Data/**/*.json` and `Content/**/Data/**/*.json`
   — JSON only, so C# or C++ in a `Data/` folder does not pick up its file-naming rule.
-- **`shader-code.md`** matches shader files by type: `.gdshader`, `.shader`,
+- **`shader-code.md`** matches shader files by type: `.gdshader`, `.wesl`, `.wgsl`, `.shader`,
   `.hlsl`, `.cginc`, `.compute`, `.shadergraph`, `.usf`, `.ush`, plus `Shaders/**`.
 - **`test-standards.md`** matches `Assets/Tests/**/*.cs` and `Source/**/Tests/**/*.{h,cpp}`.
 - **`scene-files.md`** is the exception: Godot and Unity scene and asset files are text and have
-  rules; Unreal's are binary, so a deny rule blocks edits instead of a rule guiding them.
+  rules; Unreal's are binary, so a deny rule blocks edits instead of a rule guiding them. Bevy has no matching
+  scene file, and the rule's Bevy section points to `docs/engine-reference/bevy/`.
 
 > **`skill-authoring.md` is the odd one out and deliberately so.** Every other
 > rule here scopes a *game* directory; that one scopes the **framework's own**

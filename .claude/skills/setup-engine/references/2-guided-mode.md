@@ -37,7 +37,7 @@ mode) and Read those ranges with offset and limit:
 
 **Question 1 — Prior experience** (ask this first, always, via `AskUserQuestion`):
 - Prompt: "Have you worked in any of these engines before?"
-- Options: `Godot` / `Unity` / `Unreal Engine 5` / `Multiple — I'll explain` / `None of them`
+- Options: `Godot` / `Unity` / `Unreal Engine 5` / `Bevy` / `Multiple — I'll explain` / `None of them`
 - If they pick a specific engine → recommend that engine. Prior experience outweighs all other factors. Confirm with them and skip the matrix.
 - If "None" or "Multiple" → continue to the questions below.
 
@@ -52,11 +52,12 @@ mode) and Read those ranges with offset and limit:
   - Web → Godot exports cleanly to web; Unity WebGL is functional; Unreal has poor web support
   - PC only → all engines viable; other factors decide
   - Multiple → Unity is the most portable across PC/mobile/console
+  - Bevy → PC is viable. Web: `webgl2` and `webgpu` Cargo features, and a wasm release profile in its setup guide. Console: its Cargo features and 0.20 notes name no console target, so never recommend it for console-first. Mobile: Android Cargo features exist, but the 0.20 notes and setup guide say nothing about mobile, so say that rather than recommend it for mobile-first
 
 1. **What kind of game?** (2D, 3D, or both?)
 2. **Primary input method?** (keyboard/mouse, gamepad, touch, or mixed?)
 3. **Team size and experience?** (solo beginner, solo experienced, small team?)
-4. **Any strong language preferences?** (GDScript, C#, C++, visual scripting?)
+4. **Any strong language preferences?** (GDScript, C#, C++, Rust, visual scripting?)
 5. **Budget for engine licensing?** (free only, or commercial licenses OK?)
 
 ### Produce a recommendation
@@ -82,6 +83,12 @@ Do NOT use a simple scoring matrix that eliminates engines. Instead, reason thro
 - Real limitations: Steepest learning curve; heaviest editor (slow compile times, large project sizes); overkill for stylized/2D/small-scope games; C++ is genuinely hard; not suitable for mobile or web; 5% royalty past $1M gross revenue
 - Licensing reality: 5% royalty only applies AFTER $1M gross revenue per title. For a first game or any game that doesn't reach $1M, it costs nothing. This threshold is high enough that most indie developers will never pay it.
 - Best fit: AAA-quality 3D; large open-world games; photorealistic visuals; developers with C++ experience or willing to use Blueprint; games targeting high-end PC/console where visual fidelity is a core selling point
+
+**Bevy**
+- Genuine strengths: Code-only workflow where the whole game is Rust in version control; an ECS at the centre of the engine, with everything composed from plugins; open source with no fees; agents can read and change everything because nothing lives in a binary editor format
+- Real limitations: No visual editor, so scenes, UI and levels are built in code or authored in outside tools; Rust only, and Rust has a real learning curve; pre-1.0, with breaking changes in every minor release (0.18 in January, 0.19 in June, 0.20 in October 2026, each with its own migration guide) and third-party crates that must catch up each time; the minimum Rust version tracks the latest stable release; no built-in physics (a third-party crate is needed); no console target in its Cargo features or 0.20 notes; the first build compiles all of Bevy and takes a while
+- Licensing reality: `MIT OR Apache-2.0`, with no fees or royalties at any revenue.
+- Best fit: Programmers comfortable with Rust who want a code-first engine and accept regular migration work; PC-first games; projects where having no visual editor is acceptable. A poor fit for designers or artists who need an editor, console-first games, and projects that cannot absorb breaking upgrades
 
 **Genre-specific guidance** (factor this into the recommendation):
 - 2D any style → Godot strongly preferred

@@ -22,8 +22,8 @@
 #                   entities.yaml's entities and items sections, read through
 #                   registry.sh, deprecated ones left out
 #   found [--engine E] [--files]
-#                   content files on disk for the engine (godot, unity or
-#                   unreal; default: engine.name as project-state.sh reads it)
+#                   content files on disk for the engine (godot, unity, unreal
+#                   or bevy; default: engine.name as project-state.sh reads it)
 #   band FOUND SPECIFIED
 #                   the percentage and status band of one pair
 #   gap             rows `system<TAB>type<TAB>specified<TAB>found` on stdin:
@@ -48,6 +48,7 @@
 #   unity   Assets/         every type; no data/ segment needed
 #   unreal  Content/        every type; no data/ segment needed (Source/ holds
 #                           C++ only and is not searched)
+#   bevy    assets/ only    src/ holds Rust only and is not searched
 # A root is looked for by its exact name, so Assets/ and assets/ are two roots
 # even on a case-insensitive disk. Each root is printed present or absent.
 # Under assets/ the four data types (characters, items, abilities, quests)
@@ -56,7 +57,10 @@
 #   levels      the engine's scene files: .tscn, .unity, .umap (one extension
 #               per engine, not all three); by levels counts them in folders
 #               named levels, areas, maps, worlds or stages. A UI scene counts
-#               too, as the skill says to count every match.
+#               too, as the skill says to count every match. Bevy has no scene
+#               file extension to count (a scene is Rust code or a bsn! macro), so
+#               its levels print a `not_counted` row: the 0 means not counted,
+#               not none.
 #   characters  folders enemies, characters, npcs (npcs: the skill's heading
 #               names NPCs but its globs do not)
 #   items       folders items, equipment, loot; on Unity also any file named
@@ -67,7 +71,8 @@
 # Folder names compare in any case (items and Items). Files in them count when
 # their extension is one of the engine's data extensions: godot json, tres,
 # asset and, for characters, yaml, tscn and prefab, and for quests json and
-# yaml only; unity json, yaml, asset, prefab; unreal uasset. A file in two
+# yaml only; unity json, yaml, asset, prefab; unreal uasset; bevy json, ron,
+# toml. A file in two
 # folders of a type counts once in the type and once in each folder row.
 #
 # Output: TSV.
@@ -298,10 +303,11 @@ case "$LOW" in
   godot) ENG=godot; ROOTS="assets src" ;;
   unity) ENG=unity; ROOTS="assets Assets" ;;
   unreal*) ENG=unreal; ROOTS="assets Content" ;;
+  bevy) ENG=bevy; ROOTS="assets" ;;
   *)
-    if [ "$ESRC" = flag ]; then usage "--engine takes godot, unity or unreal, got $RAW"; fi
+    if [ "$ESRC" = flag ]; then usage "--engine takes godot, unity, unreal or bevy, got $RAW"; fi
     printf 'engine\t%s\t%s\n' "$RAW" "$ESRC"
-    echo "content-count: engine $RAW has no content rules here (godot, unity or unreal)" >&2
+    echo "content-count: engine $RAW has no content rules here (godot, unity, unreal or bevy)" >&2
     exit 3 ;;
 esac
 printf 'engine\t%s\t%s\n' "$ENG" "$ESRC"
@@ -338,6 +344,7 @@ printf '%s\n' "$LIST" | ENG="$ENG" SHOWFILES="$SHOWFILES" awk '
   function extok(g, e) {
     if (eng == "unreal") return (e == "uasset")
     if (eng == "unity") return (e == "json" || e == "yaml" || e == "asset" || e == "prefab")
+    if (eng == "bevy") return (e == "json" || e == "ron" || e == "toml")
     if (g == "characters") return (e == "json" || e == "tres" || e == "asset" || e == "yaml" || e == "tscn" || e == "prefab")
     if (g == "quests") return (e == "json" || e == "yaml")
     return (e == "json" || e == "tres" || e == "asset")
@@ -360,6 +367,7 @@ printf '%s\n' "$LIST" | ENG="$ENG" SHOWFILES="$SHOWFILES" awk '
     for (gi = 1; gi <= ng; gi++) {
       g = G[gi]; hit = 0; nh = 0
       if (g == "levels") {
+        if (eng == "bevy") continue
         sceneext = (eng == "godot") ? "tscn" : ((eng == "unity") ? "unity" : "umap")
         if (ext != sceneext) continue
         hit = 1
@@ -384,6 +392,7 @@ printf '%s\n' "$LIST" | ENG="$ENG" SHOWFILES="$SHOWFILES" awk '
     }
   }
   END {
+    if (eng == "bevy") printf "not_counted\tlevels\tBevy has no scene file extension: a scene is Rust code or a bsn! macro\n"
     for (gi = 1; gi <= ng; gi++) printf "found\t%s\t%d\n", G[gi], tot[G[gi]]
     for (gi = 1; gi <= ng; gi++) {
       g = G[gi]

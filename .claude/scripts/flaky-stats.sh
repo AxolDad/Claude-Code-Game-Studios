@@ -18,7 +18,7 @@
 #               reports/ and Saved/Logs/ named *.xml, *.log or *.txt, sorted by
 #               path: pass the files yourself when their names do not sort in
 #               run order
-#   --format F  auto (default: found per file), junit, nunit, unreal or text
+#   --format F  auto (default: found per file), junit, nunit, unreal, cargo or text
 #   --runs      also print one RUN row per file
 #   --all       also list tests with no fail and no skip (default: only tests
 #               with at least one fail or skip are listed; the rest are counted)
@@ -37,6 +37,9 @@
 #           a fail, any other word a skip and listed as `unrecognised`; id is
 #           Path={...}, else Name={...}; a result with neither is counted as
 #           no_id and kept out of the tests
+#   cargo   `cargo test` output: lines `test <id> ... ok`, `... FAILED` and
+#           `... ignored`; ok is a pass, FAILED a fail, ignored a skip. Keep the
+#           output with test-run.sh --log, under test-results/
 #   text    a line with PASSED or FAILED as a whole word (Godot), or Test passed
 #           or Test failed (Unity): the id is the line without the marker, a
 #           leading ISO timestamp, ANSI colour codes, timing words like 12ms or
@@ -109,8 +112,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$FORMAT" in
-  auto|junit|nunit|unreal|text) ;;
-  *) echo "flaky-stats: --format takes auto, junit, nunit, unreal or text, got $FORMAT" >&2; exit 2 ;;
+  auto|junit|nunit|unreal|cargo|text) ;;
+  *) echo "flaky-stats: --format takes auto, junit, nunit, unreal, cargo or text, got $FORMAT" >&2; exit 2 ;;
 esac
 
 if [ -n "$ROOT_ARG" ]; then
@@ -162,16 +165,18 @@ printf '%s\n' "$FILES" | FORMAT="$FORMAT" SHOWRUNS="$SHOWRUNS" ALL="$ALL" awk '
     }
   }
   # The format of one file: NUnit if any <test-case, else JUnit if any
-  # <testcase, else Unreal if any "Test Completed. Result={", else text.
-  function detect(f,    l, nu, ju, un) {
-    nu = 0; ju = 0; un = 0
+  # <testcase, else Unreal if any "Test Completed. Result={", else Cargo if any
+  # line starts "test result: ", else text.
+  function detect(f,    l, nu, ju, un, cg) {
+    nu = 0; ju = 0; un = 0; cg = 0
     while ((getline l < f) > 0) {
       if (index(l, "<test-case") > 0) nu = 1
       else if (index(l, "<testcase") > 0) ju = 1
       if (index(l, "Test Completed. Result={") > 0) un = 1
+      if (index(l, "test result: ") == 1) cg = 1
     }
     close(f)
-    return nu ? "nunit" : (ju ? "junit" : (un ? "unreal" : "text"))
+    return nu ? "nunit" : (ju ? "junit" : (un ? "unreal" : (cg ? "cargo" : "text")))
   }
   function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
   # XML entities in an id; &amp; last so &amp;lt; stays &lt;.
@@ -293,6 +298,16 @@ printf '%s\n' "$FILES" | FORMAT="$FORMAT" SHOWRUNS="$SHOWRUNS" ALL="$ALL" awk '
     else { code = "S"; unrec("unreal", w) }
     record(id, code)
   }
+  function cargo_line(s,    tail, w, code) {
+    if (s !~ /^test .* \.\.\. (ok|FAILED|ignored)/) return
+    tail = s; sub(/^.* \.\.\. /, "", tail)
+    w = tail; sub(/[ ,].*$/, "", w)
+    if (w == "ok") code = "P"
+    else if (w == "FAILED") code = "F"
+    else code = "S"
+    s = substr(s, 6); sub(/ \.\.\. .*$/, "", s)
+    record(s, code)
+  }
   function text_line(s,    hp, hf, tpz, tfl, code, marker, p, t, n, a, i, out) {
     gsub(/\033\[[0-9;]*m/, "", s)
     hp = match(s, /(^|[^A-Za-z0-9_])PASSED([^A-Za-z0-9_]|$)/) > 0
@@ -357,6 +372,7 @@ printf '%s\n' "$FILES" | FORMAT="$FORMAT" SHOWRUNS="$SHOWRUNS" ALL="$ALL" awk '
     line = $0; sub(/\r$/, "", line)
     if (cf == "nunit" || cf == "junit") xml_line(line)
     else if (cf == "unreal") unreal_line(line)
+    else if (cf == "cargo") cargo_line(line)
     else text_line(line)
   }
   END {

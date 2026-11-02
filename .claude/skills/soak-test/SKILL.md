@@ -141,6 +141,18 @@ Engine-specific monitoring guidance.
   silently assumes both the unit *and* a project scale — 50MB is a rounding
   error for one game and a catastrophe for another
 
+**Bevy:**
+- No editor or profiler panel. The names here are from the `bevy_diagnostic`
+  0.20.1 source, not `docs/engine-reference/`; confirm them at T+0
+- The build must add `SystemInformationDiagnosticsPlugin` (Cargo feature
+  `sysinfo_plugin`, on by default), `EntityCountDiagnosticsPlugin` and
+  `LogDiagnosticsPlugin`, which prints them to the console. Without them, read memory
+  from the OS process monitor, and the entity count is NOT ASSESSED
+- Record: `process/mem_usage`, `entity_count` (**units as displayed**)
+- Alert threshold: `process/mem_usage` growth > 20% from T+0 after the first 15
+  minutes. `entity_count` should return to its T+0 value after leaving a level; a
+  floor that keeps rising is a leak regardless of units
+
 ### Stability observation items (if focus = stability or all)
 
 At each checkpoint, note:
@@ -184,6 +196,7 @@ Before starting the soak:
   - **Godot**: Debugger → Monitors tab → Memory section visible
   - **Unity**: Memory Profiler window open
   - **Unreal**: `stat memory` ready in console
+  - **Bevy**: `LogDiagnosticsPlugin` output visible, or the OS process monitor open
   - Tool actually used, as named in this editor: [record it — the names above
     are NOT SOURCEABLE from `docs/engine-reference/`; none found → NOT ASSESSED]
 - [ ] Soak target confirmed: [session design intent from game concept]

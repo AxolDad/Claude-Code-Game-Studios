@@ -13,18 +13,20 @@ Test infrastructure created for [engine].
 Files created:
 - tests/README.md
 - tests/unit/ and tests/integration/ (Godot) — or the engine's test root:
-  Unity Assets/Tests/EditMode/ and PlayMode/, Unreal Source/<Module>/Private/Tests/
+  Unity Assets/Tests/EditMode/ and PlayMode/, Unreal Source/<Module>/Private/Tests/,
+  Bevy tests/unit/main.rs and tests/integration/main.rs
 - tests/smoke/critical-paths.md
 - production/qa/evidence/.gitkeep
 [engine-specific files]
 - .github/workflows/tests.yml
 
 Next steps:
-1. [Engine-specific install step, e.g., "Install GdUnit4 via the Asset Store (AssetLib before Godot 4.7)"]
+1. [Engine-specific install step, e.g., "Install GdUnit4 via the Asset Store (AssetLib before Godot 4.7)"; Bevy has none]
 2. Write your first test in the engine's test root:
    tests/unit/[system]/[system]_[feature]_test.gd (Godot),
-   Assets/Tests/EditMode/[System]Tests.cs (Unity), or
-   Source/<Module>/Private/Tests/[System]Test.cpp (Unreal)
+   Assets/Tests/EditMode/[System]Tests.cs (Unity),
+   Source/<Module>/Private/Tests/[System]Test.cpp (Unreal), or
+   tests/unit/[system].rs with `mod [system];` in tests/unit/main.rs (Bevy)
 3. Run `/qa-plan sprint` before your first sprint to classify stories and set
    test evidence requirements. At `workflow: minimal` — the default — skip
    this: there are no sprints. At `qa.level: minimal`, also the default, tests
@@ -34,8 +36,9 @@ Next steps:
 
 Gate note: /gate-check Technical Setup → Pre-Production now requires:
 - the engine's test root: tests/unit/ and tests/integration/ (Godot),
-  Assets/Tests/EditMode/ and Assets/Tests/PlayMode/ (Unity), or
-  Source/<Module>/Private/Tests/ (Unreal)
+  Assets/Tests/EditMode/ and Assets/Tests/PlayMode/ (Unity),
+  Source/<Module>/Private/Tests/ (Unreal), or
+  tests/unit/main.rs and tests/integration/main.rs (Bevy)
 - .github/workflows/tests.yml
 - At least one example test file
 Run /test-setup and write one example test before advancing.
@@ -43,5 +46,10 @@ Run /test-setup and write one example test before advancing.
 
 Verdict: **COMPLETE** — test framework scaffolded and CI/CD wired up.
 ```
+
+On Bevy, a `FAILED` row, a `NEEDS` row or a script that printed nothing is not
+COMPLETE. List the rows in place of the block's file list and end with
+`Verdict: **INCOMPLETE** — [the rows]`, and for `NEEDS` name `/setup-engine` as the
+next step.
 
 ---

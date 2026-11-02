@@ -30,6 +30,7 @@ the only place its test runner compiles them (`.claude/docs/directory-structure.
 | Godot | `tests/helpers/` |
 | Unity | `Assets/Tests/EditMode/Helpers/` — inside the `EditModeTests` assembly `/test-setup` creates. If PlayMode tests need the same helpers, ask before creating `Assets/Tests/Helpers/TestHelpers.asmdef` and referencing it from both test assemblies. |
 | Unreal | `Source/<Module>/Private/Tests/Helpers/` |
+| Bevy | `tests/helpers/`, declared from each test crate's `main.rs` (§4). Never `tests/helpers.rs`: Cargo would build that as a test target of its own. |
 
 `tests/helpers/` below means the helper root for the project's engine.
 
@@ -55,6 +56,11 @@ Two things go wrong with a bare `assert()` in a helper, and both are silent:
 2. **It is stripped in release builds.** A helper library built on `assert()`
    stops asserting entirely in exactly the build you most want checked, and does
    so without any error — the tests still "pass".
+
+On Bevy the framework is Rust's test harness, so this reads differently: `assert!`
+and `assert_eq!` are its assertions, failing one test and leaving the rest to run,
+in every build profile. The one stripped in release is `debug_assert!`: never use it
+in a helper.
 
 **Look up the assertion form for the configured framework before generating
 code.** Do not copy the forms in this file or in other skills' examples as
@@ -96,12 +102,14 @@ If the engine is not configured in either source: "Engine not configured. Run `/
 ## 3. Load Existing Test Patterns
 
 Scan the engine's test root for patterns already in use (Godot `tests/`, Unity
-`Assets/Tests/`, Unreal `Source/<Module>/Private/Tests/`):
+`Assets/Tests/`, Unreal `Source/<Module>/Private/Tests/`, Bevy `tests/` and
+`#[cfg(test)]` modules in `src/`):
 
 ```
 Glob pattern="tests/**/*_test.*"                  (Godot)
 Glob pattern="Assets/Tests/**/*Tests.cs"          (Unity)
 Glob pattern="Source/*/Private/Tests/**/*.cpp"    (Unreal)
+Glob pattern="tests/**/*.rs"                      (Bevy)
 ```
 
 For a representative sample (up to 5 files), read the test files and extract:
@@ -377,6 +385,13 @@ namespace GameTestHelpers
 
 ---
 
+### Bevy (Rust)
+
+Read `references/bevy-helpers.md` when the engine is Bevy, and on no other engine.
+It holds the `mod` lines each test crate needs and the base helpers.
+
+---
+
 ## 5. Generate System-Specific Helpers
 
 For `[system-name]` or `all` modes, generate a helper per system:
@@ -451,7 +466,8 @@ After writing: Verdict: **COMPLETE** — helper files created.
 "Helper files created. To use them in a test:
 - Godot: `class_name` is auto-imported — no explicit import needed
 - Unity: Add `using` directive or reference the test assembly
-- Unreal: `#include \"Tests/Helpers/GameTestHelpers.h\"` (from inside the module)"
+- Unreal: `#include \"Tests/Helpers/GameTestHelpers.h\"` (from inside the module)
+- Bevy: add `#[path = \"../helpers/mod.rs\"] mod helpers;` to each test crate's `main.rs`, and `pub mod [system]_factory;` to `tests/helpers/mod.rs` for each system helper; a helper is not compiled until both lines exist"
 
 ---
 

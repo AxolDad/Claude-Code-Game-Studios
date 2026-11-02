@@ -15,7 +15,8 @@ to mark the story `In Progress`, and routes implementation to a programmer agent
 plus the project's engine specialist. It does not write source code itself, and
 every file it does write — story fields, `sprint-status.yaml`, a dependency's
 `Status`, a Config/Data file, Unity's `ScreenshotOnArg.cs` — follows an ask that
-names it; only the session-state checkpoint is written without one.
+names it; only the session-state checkpoint, the evidence stamp and Bevy's capture
+config are written without one.
 
 After the agent returns it verifies the agent finished, runs the engine parse
 check, launches the build to observe anything player-visible (`Run result:`
@@ -466,12 +467,47 @@ The `full` column of the file-check table has its own STOP rule, so the
 
 ---
 
+### Case 12: Bevy — `cargo check`, the `mod` line, and a capture that must exist
+
+**Fixture:**
+- `project.yaml`: `engine.name: Bevy`, `specialists.code: bevy-ecs-specialist`,
+  `specialists.ui: bevy-ui-specialist`, `commands.smoke: "cargo check"`,
+  `modes.workflow: minimal`, `qa.level: standard`
+- A Logic story whose Test Evidence path is `tests/unit/combat.rs`, and a UI story
+- The agent writes `tests/unit/combat.rs` but no `mod combat;` in `tests/unit/main.rs`
+
+**Input:** `/dev-story production/epics/[slug]/story-004-[slug].md`, once per story.
+
+**Expected behavior:**
+1. The brief sends game code to `src/lib.rs` and its modules, never `src/main.rs`, and
+   tells the agent a new test file needs `mod combat;` in `tests/unit/main.rs`
+2. "Is the test there?" Greps `main.rs`, finds no `mod combat;`, and flags the story
+   unverifiable, as for a missing file
+3. "Does it parse?" reads `references/engine-checks.md` and runs `cargo check`, plus
+   `cargo check --tests` when a test was written, reporting each exit code
+4. For the UI story: writes `production/qa/evidence/[story-slug]/capture.ron` with
+   `(events: [(60, ScreenshotAndExit)])`, removes any old `screenshot-60.png`, and runs
+   `CI_TESTING_CONFIG=… timeout 1800 cargo run --features bevy/bevy_ci_testing`
+5. With the file present, moves it to the evidence folder, stamps it, opens it, and
+   prints `Run result: OBSERVED — …`
+
+**Assertions:**
+- [ ] A test file no `mod` line reaches is not reported as present
+- [ ] `Cargo.toml` is not edited to enable `bevy_ci_testing`
+- [ ] Exit 0 with no PNG is `Run result: NOT VERIFIED — no screenshot written`
+- [ ] A panic `Unable to find a GPU!` or `Failed to build event loop` is `Run result: NOT VERIFIED — <that message>`
+- [ ] A timeout (exit 124) is NOT VERIFIED, never OBSERVED
+- [ ] The retained image is under `production/qa/evidence/[story-slug]/`, not the project root
+- [ ] No `cargo` is `parse NOT VERIFIED — cargo not available`
+
+---
+
 ## Protocol Compliance
 
 - [ ] Does NOT write source code directly — delegates to specialist agents
 - [ ] Resolves the workflow tier and verifies required inputs before any agent is spawned
 - [ ] Mismatch and dependency prompts (`AskUserQuestion`) come before implementation
-- [ ] Every file the skill itself writes — story fields, `sprint-status.yaml`, a dependency's `Status`, a Config/Data file, `ScreenshotOnArg.cs` — follows an ask that names it; only the `active.md` checkpoint is written without one
+- [ ] Every file the skill itself writes — story fields, `sprint-status.yaml`, a dependency's `Status`, a Config/Data file, `ScreenshotOnArg.cs` — follows an ask that names it; Bevy's `capture.ron` needs none, and otherwise only the `active.md` checkpoint is written without one
 - [ ] Code is written only under the resolved code root; an unresolved root writes nothing
 - [ ] Skipped phases and dropped briefing items are announced in the output
 - [ ] Never emits "Implementation Complete" for an agent that stopped early (INCOMPLETE)
@@ -482,8 +518,8 @@ The `full` column of the file-check table has its own STOP rule, so the
 
 ## Coverage Notes
 
-- The code root is covered for Godot (`src/`) and Unity (`Assets/`, Case 6) and for
-  an unresolved engine (Case 7). Unreal (`Source/<Module>/<System>/`, with the
+- The code root is covered for Godot (`src/`), Unity (`Assets/`, Case 6) and Bevy
+  (`src/lib.rs`, Case 12) and for an unresolved engine (Case 7). Unreal (`Source/<Module>/<System>/`, with the
   editor-target build as the parse check) is not given a fixture.
 - The INCOMPLETE path is Case 9; `parse NOT VERIFIED` when the engine binary is
   unavailable is not given a fixture.

@@ -20,11 +20,11 @@
 #          [--budget KEY=SIZE ...] [--max-dim N] [--sample-rates LIST]
 #          [--name-regex ERE] [--files]
 #   --root DIR          the project; defaults to the repo this script is in
-#   --engine E          godot, unity or unreal (default: engine.name from
+#   --engine E          godot, unity, unreal or bevy (default: engine.name from
 #                       project.local.yaml, then project.yaml, as content-count.sh)
 #   --category C        keep one category: on godot a folder of assets/ (art,
-#                       audio, vfx, shaders or data); on unity and unreal the
-#                       first folder under the asset root (any case)
+#                       audio, vfx, shaders or data); on unity, unreal and bevy
+#                       the first folder under the asset root (any case)
 #   --budget KEY=SIZE   a size budget in bytes, or with a K (1024) or M
 #                       (1048576) suffix. Budgets are prose in the art bible,
 #                       so they are flags and never read from it. KEY is `all`,
@@ -46,6 +46,8 @@
 #           (other folders of assets/ are counted as outside_scope, not scanned)
 #   unity   Assets/, leaving out scripts (.cs, .asmdef) and .meta files
 #   unreal  Content/*.uasset and Content/*.umap
+#   bevy    assets/, leaving out .meta files (Bevy's asset processor writes one
+#           beside a processed asset; it is settings, not an asset)
 # Left out on every engine: .gitkeep placeholders. Left out on godot: .import
 # files (the importer writes one beside each source asset; it is not an asset
 # and its source_file line is not a reference) and .uid files (Godot 4.4+
@@ -232,16 +234,17 @@ if [ -z "$RAW" ] || [ "$RAW" = "-" ]; then
   exit 3
 fi
 LOW=$(printf '%s' "$RAW" | tr '[:upper:]' '[:lower:]')
-# The asset root per engine is the skill's Phase 2: assets/ on Godot, Assets/ on
-# Unity, Content/ on Unreal.
+# The asset root per engine is the skill's Phase 2: assets/ on Godot and Bevy,
+# Assets/ on Unity, Content/ on Unreal.
 case "$LOW" in
   godot) ENG=godot; ROOTDIR=assets ;;
   unity) ENG=unity; ROOTDIR=Assets ;;
   unreal*) ENG=unreal; ROOTDIR=Content ;;
+  bevy) ENG=bevy; ROOTDIR=assets ;;
   *)
-    if [ "$ESRC" = flag ]; then usage "--engine takes godot, unity or unreal, got $RAW"; fi
+    if [ "$ESRC" = flag ]; then usage "--engine takes godot, unity, unreal or bevy, got $RAW"; fi
     printf 'engine\t%s\t%s\n' "$RAW" "$ESRC"
-    echo "asset-scan: engine $RAW has no asset rules here (godot, unity or unreal)" >&2
+    echo "asset-scan: engine $RAW has no asset rules here (godot, unity, unreal or bevy)" >&2
     exit 3 ;;
 esac
 if [ "$ENG" = godot ] && [ -n "$CATF" ]; then
@@ -281,6 +284,7 @@ CLASS=$(printf '%s\n' "$ALLF" | ENG="$ENG" CATF="$CATF" awk '
     else if (eng == "unity" && ext == "cs") reason = ".cs"
     else if (eng == "unity" && ext == "asmdef") reason = ".asmdef"
     else if (eng == "unreal" && ext != "uasset" && ext != "umap") reason = "not .uasset or .umap"
+    else if (eng == "bevy" && ext == "meta") reason = ".meta"
     if (reason != "") { print "X\t" reason; next }
     if (eng == "godot") {
       # The skill scans five folders of assets/; the rest is counted, not scanned.
@@ -459,6 +463,7 @@ fi
     if (eng == "godot") printf "outside_scope\t%d\tfiles under assets/ outside art, audio, vfx, shaders and data\n", nout
     if (eng == "godot") { nx = split(".import .uid .gitkeep", xl, " ") }
     else if (eng == "unity") { nx = split(".meta .cs .asmdef .gitkeep", xl, " ") }
+    else if (eng == "bevy") { nx = split(".meta .gitkeep", xl, " ") }
     else { nx = 2; xl[1] = "not .uasset or .umap"; xl[2] = ".gitkeep" }
     for (i = 1; i <= nx; i++) printf "excluded\t%s\t%d\n", xl[i], xc[xl[i]]
 
@@ -488,10 +493,10 @@ fi
     }
 
     # --- which checks run ---
-    gdnaming = (eng == "godot" && namere == "")
+    gdnaming = ((eng == "godot" || eng == "bevy") && namere == "")
     if (nodata != "") { namingst = "not_run"; namingd = nodata }
     else if (namere != "") { namingst = "ran"; namingd = "name_regex " namere }
-    else if (eng == "godot") { namingst = "ran"; namingd = "lowercase_underscore" }
+    else if (eng == "godot" || eng == "bevy") { namingst = "ran"; namingd = "lowercase_underscore" }
     else { namingst = "not_run"; namingd = "no naming rule for " eng "; pass the art bible\047s rule with --name-regex" }
     unrealwhy = "asset files do not keep their source format, dimensions or sample rate"
     if (nodata != "") { potst = "not_run"; potd = nodata }
@@ -509,6 +514,7 @@ fi
     else if (havefile != 1) { ratest = "not_run"; rated = "file is not installed" }
     else { ratest = "ran"; rated = (nra > 0) ? ("file -b; allowed " ENVIRON["RATES"]) : "file -b; no --sample-rates flag given, none compared" }
     if (nodata != "") { orphst = "not_run"; orphd = nodata }
+    else if (eng == "bevy") { orphst = "not_run"; orphd = "asset paths are strings built in Rust code, so a search cannot prove a file unused" }
     else if (eng != "godot") { orphst = "not_run"; orphd = "references live in scenes, prefabs and other assets, not in code" }
     else if (srcn == 0) { orphst = "not_run"; orphd = "no source files under src/" }
     else { orphst = "ran"; orphd = ncorp " files searched for res:// paths" }

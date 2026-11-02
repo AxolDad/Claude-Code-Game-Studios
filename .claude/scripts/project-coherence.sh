@@ -20,7 +20,7 @@
 #
 # A subtler cause is handled elsewhere: `/setup-engine` writes an `Installed at
 # pin time` row into VERSION.md, and a VERSION.md with no such row leaves that
-# step no slot, so it vanishes without a trace. The row ships in all three
+# step no slot, so it vanishes without a trace. The row ships in all the
 # reference files, and check 1 below reads it.
 #
 # OBSERVATIONS, NEVER VERDICTS
@@ -211,6 +211,18 @@ case "$ENGINE_LC" in
       [ -n "$UMAJ" ] && [ -n "$UMIN" ] && PROBE="$UMAJ.$UMIN${UPAT:+.$UPAT} (Engine/Build/Build.version)"
     fi
     ;;
+  bevy)
+    # Bevy has no engine binary: it is a crate, and Cargo.lock records the exact
+    # version this project builds against. The first `name = "bevy"` block; the
+    # `bevy_*` crates have names of their own.
+    if [ -f Cargo.lock ]; then
+      BVER="$(tr -d '\r' < Cargo.lock | awk '
+        /^name = "bevy"$/ { want = 1; next }
+        want && /^version = / { gsub(/"/, "", $3); print $3; exit }
+        /^\[\[package\]\]/ { want = 0 }')"
+      [ -n "$BVER" ] && PROBE="$BVER (Cargo.lock)"
+    fi
+    ;;
 esac
 
 if [ -z "$PROBE" ]; then
@@ -218,6 +230,8 @@ if [ -z "$PROBE" ]; then
     skipped "declared version vs installed binary — no Unity editor at the path in commands.test or in the Hub folder for engine.version. A probe that could not run has not established absence."
   elif [ "$ENGINE_LC" = "godot" ]; then
     skipped "declared version vs installed binary — no Godot executable found (commands.test, engine.path, PATH). A probe that could not run has not established absence."
+  elif [ "$ENGINE_LC" = "bevy" ]; then
+    skipped "declared version vs the crate in use — no Cargo.lock with a bevy package (run cargo build). A probe that could not run has not established absence."
   elif [ "$ENGINE_LC" = "unreal" ]; then
     skipped "declared version vs installed engine — no readable Engine/Build/Build.version under engine.path, the editor in commands.test, the launcher folder for the .uproject's EngineAssociation, or UnrealEditor-Cmd on PATH. A probe that could not run has not established absence."
   else

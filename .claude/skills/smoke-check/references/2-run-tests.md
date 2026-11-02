@@ -11,6 +11,7 @@
 - Godot 4
 - Unity: Edit Mode, then Play Mode as a second run
 - Unreal Engine: build first, commands per OS, macOS
+- Bevy: `test-run.sh`, and how to read its rows
 - Unknown engine / not configured
 - Test runner not available here
 - Build check (the WAIVED path only)
@@ -156,6 +157,43 @@ Read the output, not the exit code: a failing test and a run that matched nothin
   not be found`) → FAIL: no test ran. The exception: the editor never started (exit 126 or 127, `command not found`) — that is the runner not being
   available, below, and `NOT ASSESSED`.
 
+**Bevy** — `test-run.sh` is the run. Do not call `cargo` by hand or wrap the script
+in `timeout`: it builds first (`cargo test --no-run`, into a `.pre` log beside the
+log below), then runs `commands.test`, else `cargo test --no-fail-fast`, under its
+own 1800-second timeout. A first build compiles all of Bevy, which can outlast the
+Bash tool's 10-minute limit, so run it in the background and wait for it:
+```bash
+mkdir -p test-results
+bash .claude/scripts/test-run.sh bevy --log test-results/cargo-test.log
+```
+It prints rows and no verdict. Report its `command` row as the command you ran.
+Its `rule` row names the outcome:
+
+| `rule` | What happened | Status |
+|--------|---------------|--------|
+| `bevy:0` | Exit 0, and tests ran | PASS, with the counts from the `tests` row, **unless a row below changes it** |
+| `bevy:test-failed` | A test failed | FAIL, listing the `failed` rows (and `failed_more`) |
+| `bevy:build-failed` | A compile error, so no test ran | FAIL, quoting `evidence` and naming `pre_log` |
+| `bevy:other` | Non-zero exit with no failing test line; a test binary may have crashed | FAIL: did not complete, naming `log` |
+| `timeout` | The run never completed | FAIL |
+| `bevy:zero-tests` | **Exit 0 over zero tests** (`zero_tests yes`) | `NOT ASSESSED — no tests found`, never a pass, as with Unity's `unity:zero-tests` |
+| `bevy:no-manifest` | No `Cargo.toml`, so nothing ran | `NOT ASSESSED — no Cargo.toml; run /setup-engine` |
+| `runner-unavailable` | No `cargo`, or exit 126 or 127 | NOT RUN: the runner-not-available path below |
+| no `rule` row | The script did not finish | `NOT ASSESSED — test-run.sh reported no rule` |
+
+Two more rows change that reading:
+
+- **`uncompiled <path>`** names a test file no `mod` line reaches. Cargo never built
+  it, and `cargo test` still exited 0 without it, so `bevy:0` covers only the tests
+  that were compiled. With a FAIL rule above, FAIL stands and these go beside it.
+  Otherwise **any `uncompiled` row makes the status
+  `NOT ASSESSED — [N] test files not compiled`**, listing each path with its fix:
+  `mod <stem>;` in that root's `main.rs`, after the `//!` header. A file a
+  `#[path]` attribute reaches is listed too: Grep for one, and report that path as
+  compiled rather than leaving it to read as a gap.
+- **`precheck src/lib.rs absent`** means tests under `tests/` cannot import the game,
+  so they can only test themselves: a `bevy:0` is PASS WITH WARNINGS, naming it.
+
 **Unknown engine / not configured:**
 "Engine not configured in `project.yaml` or
 `.claude/docs/technical-preferences.md`. Run `/setup-engine` to specify the
@@ -193,7 +231,9 @@ Phase 1 step 3 resolved, under the same timeout rules (`timeout 900`, or
 import line above first. Read the result as `/setup-engine` documents it:
 Godot `smoke` exits 0 even on a parse error, so a `SCRIPT ERROR` line in its
 output is a FAIL, and so is `Can't run project: no main scene defined` — the
-game cannot launch; Unity `smoke` exits 1 on a compile error; any other
+game cannot launch; Unity `smoke` exits 1 on a compile error; Bevy `smoke`
+(`cargo check`) exits 101 on one, with `error[E…` lines, and takes `timeout 1800`
+because its first run compiles all of Bevy; any other
 non-zero exit is a FAIL. Record `Build check: PASS — [command] exit 0`,
 `FAIL — [reason]`, or `NOT RUN — [commands.smoke and commands.build unset |
 executable not found]`. A build check that did not run is named in the report

@@ -70,7 +70,8 @@ For Logic and Integration stories, you write the test file (or scaffold it for t
 **Test naming** follows the engine's language (`.claude/rules/test-standards.md`):
 Godot `[system]_[feature]_test.gd` with `test_[scenario]_[expected]`; Unity
 `[System]Tests` with `[Scenario]_[Expected]`; Unreal one class per test,
-`F[System][Scenario]Test`, named `<Root>.[System].[Scenario]` (the root is below).
+`F[System][Scenario]Test`, named `<Root>.[System].[Scenario]` (the root is below);
+Bevy `[system].rs` with `[scenario]_[expected]`.
 
 **Pattern per engine:**
 
@@ -154,6 +155,32 @@ bool F[System][Scenario]Test::RunTest(const FString& Parameters)
 }
 
 #endif // WITH_DEV_AUTOMATION_TESTS
+```
+
+#### Bevy (Rust / cargo test)
+
+The file goes at `tests/unit/[system].rs` (or `tests/integration/[system].rs`), with
+`mod [system];` in that folder's `main.rs`. A file no `mod` reaches is not compiled,
+and `cargo test` still exits 0. Import the game from its library crate. A formula
+with no ECS state needs no `App`: call it and `assert_eq!`.
+
+```rust
+use bevy::prelude::*;
+use <crate>::[system]::*;
+
+#[test]
+fn [scenario]_[expected]() {
+    // Arrange -- no window or GPU: add only what the system under test needs
+    let mut app = App::new();
+    app.init_resource::<[Resource]>();
+    app.add_systems(Update, [system_fn]);
+
+    // Act
+    app.update();
+
+    // Assert
+    assert_eq!(app.world().resource::<[Resource]>().[field], [expected]);
+}
 ```
 
 **What to test for every Logic story formula:**

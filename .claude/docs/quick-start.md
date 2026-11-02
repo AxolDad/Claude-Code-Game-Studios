@@ -3,10 +3,10 @@
 ## What Is This?
 
 This is a complete Claude Code agent architecture for game development. It
-organizes 49 specialized AI agents into a studio hierarchy that mirrors
+organizes 54 specialized AI agents into a studio hierarchy that mirrors
 real game development teams, with defined responsibilities, delegation
 rules, and coordination protocols. It includes engine-specialist agents
-for Godot, Unity, and Unreal — each with dedicated sub-specialists for
+for Godot, Unity, Unreal, and Bevy — each with dedicated sub-specialists for
 major engine subsystems. All design agents and templates are grounded in
 established game design theory (MDA Framework, Self-Determination Theory,
 Flow State, Bartle Player Types). Use whichever engine set matches your project.
@@ -80,6 +80,7 @@ Ask yourself: "What department would handle this in a real studio?"
 | Get Unreal Engine advice | `unreal-specialist` |
 | Get Unity advice | `unity-specialist` |
 | Get Godot advice | `godot-specialist` |
+| Get Bevy advice | `bevy-specialist` |
 | Design GAS abilities/effects | `ue-gas-specialist` |
 | Define BP/C++ boundaries | `ue-blueprint-specialist` |
 | Implement UE replication | `ue-replication-specialist` |
@@ -92,6 +93,10 @@ Ask yourself: "What department would handle this in a real studio?"
 | Write Godot C# code | `godot-csharp-specialist` |
 | Create Godot shaders | `godot-shader-specialist` |
 | Build GDExtension modules | `godot-gdextension-specialist` |
+| Write Bevy systems and queries | `bevy-ecs-specialist` |
+| Write Bevy materials and shaders | `bevy-render-specialist` |
+| Build Bevy UI screens | `bevy-ui-specialist` |
+| Load Bevy assets and data files | `bevy-assets-specialist` |
 | Plan live events and seasons | `live-ops-designer` |
 | Write patch notes for players | `community-manager` |
 | Brainstorm a new game idea | Use `/brainstorm` skill |
@@ -299,7 +304,7 @@ CLAUDE.md                          -- Master config (read this first, ~80 lines)
 project.yaml                       -- Machine-readable project config (engine, modes, stage) — source of truth
 .claude/
   settings.json                    -- Claude Code hooks and project settings
-  agents/                          -- 49 agent definitions (YAML frontmatter)
+  agents/                          -- 54 agent definitions (YAML frontmatter)
   skills/                          -- 74 slash command definitions (YAML frontmatter)
   hooks/                           -- 15 event hooks (.sh, wired by settings.json) + yaml-helper.sh, update-check.sh
   rules/                           -- 14 path-specific rule files

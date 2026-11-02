@@ -10,7 +10,7 @@ paths:
 - ALL gameplay values MUST come from external config/data files, NEVER hardcoded
 - Use delta time for ALL time-dependent calculations (frame-rate independence)
 - NO direct references to UI code — use events for cross-system communication
-  (Godot signals, C# events, Unreal delegates)
+  (Godot signals, C# events, Unreal delegates, Bevy messages and observers)
 - Every gameplay system must implement a clear interface
 - State machines must have explicit transition tables with documented states
 - Write unit tests for all gameplay logic — separate logic from presentation
@@ -38,6 +38,13 @@ Unreal (values from a data asset):
 ```cpp
 const float Damage = CombatConfig->BaseDamage;
 const float Speed = Stats->MovementSpeed * DeltaTime;
+```
+
+Bevy (values from a resource filled from a data file):
+
+```rust
+let damage = combat_config.base_damage;
+let speed = stats.movement_speed * time.delta_secs();
 ```
 
 **Incorrect** (hardcoded):

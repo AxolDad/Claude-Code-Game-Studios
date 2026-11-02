@@ -96,7 +96,7 @@ Read the argument for the launch date or `dry-run` mode. Dry-run mode generates 
 > "All placeholder art replaced" green.
 
 - Count `TODO`, `FIXME`, `HACK` comments and their locations
-- Check for any `console.log`, `print()`, or debug output left in production code
+- Check for any `console.log`, `print()`, `println!`, `dbg!`, or debug output left in production code
 - Check for placeholder assets (search for `placeholder`, `temp_`, `WIP_`)
 - Check for hardcoded test/dev values (localhost, test credentials, debug flags)
 

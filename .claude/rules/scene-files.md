@@ -39,3 +39,10 @@ When you edit the text by hand:
 - With no Editor reachable, keep every `fileID` and `guid` reference intact,
   never invent a GUID, never edit or delete a `.meta` file, and open the scene
   in the Editor afterwards to confirm it loads.
+
+## Bevy
+
+Bevy has no scene file this rule matches. Scenes are code: the `bsn!` macro and
+code-defined scenes, which follow the code rules. The 0.20 release notes list the
+`.bsn` file format as future work, so never treat it as the scene format. See
+`docs/engine-reference/bevy/`.

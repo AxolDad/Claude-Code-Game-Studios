@@ -490,8 +490,8 @@ trap '[ -n "$TMP_DESIGN" ] && rm -f "$TMP_DESIGN"' EXIT
 # Making it merely faster is not enough -- the cost stays linear and the hook
 # starves again at a larger file count. Batch it, or it returns.
 #
-# WHERE DATA LIVES is engine-specific, like the code root: Godot keeps it in
-# assets/data/, Unity under Assets/ (Assets/Data/, Assets/Game/Data/), Unreal
+# WHERE DATA LIVES is engine-specific, like the code root: Godot and Bevy keep it
+# in assets/data/, Unity under Assets/ (Assets/Data/, Assets/Game/Data/), Unreal
 # under Content/. Anchored to ^assets/data/ alone, this -- the hook's only
 # blocking check -- never fired on Unity or Unreal. It stays inside the asset
 # roots so an editor's JSON-with-comments (.vscode/settings.json) never blocks.
@@ -751,9 +751,9 @@ fi
 # --- resolve the code root before either scan below ------------------------
 #
 # Both scans used to be hardcoded to `^src/gameplay/` and `^src/`. Per
-# .claude/docs/directory-structure.md, `src/` is the GODOT row of the code-root
-# table -- Unity compiles only `Assets/`, Unreal builds only from `Source/`. So
-# on two of the three supported engines both greps matched nothing on every
+# .claude/docs/directory-structure.md, `src/` is the Godot and Bevy row of the
+# code-root table -- Unity compiles only `Assets/`, Unreal builds only from
+# `Source/`. So on those two engines both greps matched nothing on every
 # commit, both checks silently did not run, and the hook exited 0. A scan that
 # cannot run and a scan that found nothing produced the identical artifact.
 #
@@ -775,7 +775,7 @@ fi
 # itself. Only fires when source code is actually being committed, so a
 # docs-only or config-only commit stays quiet and the notice keeps its meaning.
 if [ -z "$CODE_ROOT" ]; then
-    if echo "$STAGED" | grep -qiE '\.(gd|cs|cpp|cc|hpp|h|c|py|js|ts|rs|java|kt|lua|gdshader|shader|hlsl)$'; then
+    if echo "$STAGED" | grep -qiE '\.(gd|cs|cpp|cc|hpp|h|c|py|js|ts|rs|java|kt|lua|gdshader|shader|hlsl|wgsl|wesl)$'; then
         WARNINGS="$WARNINGS\nSKIPPED: source files are staged but no code root could be resolved (engine.name unset, and the tree does not name one unambiguously). The hardcoded-value and TODO-owner scans did NOT run. Run /setup-engine, or set engine.name in project.yaml."
     fi
 fi

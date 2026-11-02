@@ -16,8 +16,8 @@ or Both) before showing the Technology Stack. It then:
   `project.yaml` — the primary config store — after "May I write the `engine`,
   `specialists`, `naming`, and `commands` blocks to `project.yaml`?"
 - updates or creates `docs/engine-reference/<engine>/`, scaffolds
-  `project.godot` for Godot (never for Unity or Unreal), and reads everything
-  back with `project-coherence.sh`
+  `project.godot` for Godot and the missing crate files for Bevy (never anything for
+  Unity or Unreal), and reads everything back with `project-coherence.sh`
 
 On a re-run it edits existing `project.yaml` blocks in place rather than
 duplicating them. No director gates apply. The verdict is COMPLETE when the
@@ -283,6 +283,46 @@ Fixture defaults.
 
 ---
 
+### Case 9: Bevy — Rust, a crates.io version, and a scaffold that overwrites nothing
+
+**Fixture:**
+- Placeholders only in `technical-preferences.md`; no `engine` block in `project.yaml`
+- `cargo` and `rustc` are on `PATH`; `rustc` is at or above Bevy 0.20.0's minimum
+- `docs/engine-reference/bevy/VERSION.md` pins 0.20.0
+- No `src/lib.rs`, `src/main.rs` or `assets/`; a `Cargo.toml` with a `[package]` name of
+  `my-game` and a `bevy = "0.20"` dependency already exists
+
+**Input:** `/setup-engine bevy 0.20.0`
+
+**Expected behavior:**
+1. Reads `references/bevy-config.md`, and asks no language question
+2. Section 3 runs `cargo --version` and `rustc --version`, compares `rustc` with the
+   version's minimum from crates.io, and records the result as `Installed at pin time`
+3. CLAUDE.md gets the B1 stack, and the `ENGINE-REFERENCE-IMPORT` line becomes
+   `@docs/engine-reference/bevy/VERSION.md`
+4. `engine.language: "Rust"`, `rendering: bevy_render (wgpu)`, `physics: [TO BE CONFIGURED]`
+   are written with no shape question; `commands` are `cargo build --release`,
+   `cargo test --no-fail-fast`, `cargo run` and `cargo check`; no `engine.path` is written
+5. Routing: `code` is bevy-ecs-specialist, `shader` bevy-render-specialist, `ui`
+   bevy-ui-specialist, `additional` [bevy-assets-specialist]
+6. Section 7.5 asks "May I create" for `src/lib.rs`, `src/main.rs` and `assets/.gitkeep`
+   only; `src/main.rs` imports `my_game::GamePlugin`
+7. `timeout 1800 cargo check` runs and its result is reported; the first run creates
+   `Cargo.lock`, so `project-coherence.sh` compares it with `engine.version`
+8. Section 12 prints the Toolchain and Scaffold lines
+
+**Assertions:**
+- [ ] The existing `Cargo.toml` is neither replaced nor edited
+- [ ] `<crate>` comes from the existing `[package] name`, with the hyphen as an underscore
+- [ ] No question asks for a language, a project shape or a build target
+- [ ] `engine.path` is absent from `project.yaml`
+- [ ] A failed or unavailable `cargo check` is `Cargo.toml NOT VERIFIED — <reason>`, never a claim the crate builds
+- [ ] With no `Cargo.lock`, the coherence line is reported as `[NOT CHECKED]`, not as agreement
+- [ ] Other engines never load `references/bevy-config.md`
+- [ ] Verdict is COMPLETE
+
+---
+
 ## Protocol Compliance
 
 - [ ] Presents draft configuration before asking to write
@@ -301,7 +341,11 @@ Fixture defaults.
 
 - Godot C# and Both follow Case 1 with the A1/A2/A3 variants from
   `references/godot-language-config.md`; not separately tested.
-- The `refresh` and `upgrade` subcommands (Sections 10–11) are not tested here.
+- The `refresh` and `upgrade` subcommands (Sections 10–11) are not tested here,
+  including Bevy's `cargo update` path and the `Cargo.toml` ask when crossing a minor.
+- A Bevy toolchain below the minimum follows Case 6's ask with Bevy's options; a
+  fresh scaffold with no `Cargo.toml` follows Case 9 with the B4 name rule. Neither is
+  separately tested.
 - The Unreal Linux and macOS `commands` blocks (chosen by `uname -s`) are not
   fixture-tested; Case 3 pins Windows.
 - Section 6 is a lookup against the skill's own coverage table, asserted in

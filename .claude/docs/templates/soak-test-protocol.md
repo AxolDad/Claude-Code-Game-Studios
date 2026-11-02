@@ -18,6 +18,9 @@ Before starting the soak:
   - **Godot**: Debugger → Monitors tab → Memory section visible
   - **Unity**: Memory Profiler window open
   - **Unreal**: `stat memory` ready in console
+  - **Bevy**: `SystemInformationDiagnosticsPlugin` with `LogDiagnosticsPlugin`
+    logging `process/mem_usage` (the `sysinfo_plugin` Cargo feature, on by default;
+    not available under `dynamic_linking`)
   - Tool actually used, as named in this editor: [record it — the names above
     are NOT SOURCEABLE from `docs/engine-reference/`; none found → NOT ASSESSED]
 - [ ] Soak target confirmed: [session design intent from game concept]

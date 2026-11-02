@@ -95,6 +95,11 @@ tests/integration/**/*_test.*
 tests/regression/**/*
 ```
 
+On Bevy that glob finds nothing: test files carry no `_test` suffix. Use
+`tests/unit/**/*.rs` and `tests/integration/**/*.rs` without each `main.rs`, and
+read `tests/unit/[system]/` below as `tests/unit/[system].rs` or that folder. A
+suggested new test needs a `mod` line reaching it, or it is not compiled.
+
 For each file, note the system (from directory path) and file name.
 Do not read test file contents unless needed for name-to-test mapping.
 

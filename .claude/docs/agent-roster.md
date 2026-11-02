@@ -64,6 +64,7 @@ session's model.
 | `unreal-specialist` | Unreal Engine 5 | Blueprint vs C++, GAS overview, UE subsystems, Unreal optimization |
 | `unity-specialist` | Unity | MonoBehaviour vs DOTS, Addressables, URP/HDRP, Unity optimization |
 | `godot-specialist` | Godot 4 | GDScript patterns, node/scene architecture, signals, Godot optimization |
+| `bevy-specialist` | Bevy 0.20 | Plugin architecture, Cargo features and profiles, crate layout, Bevy optimization |
 
 ### Unreal Engine Sub-Specialists
 
@@ -91,3 +92,12 @@ session's model.
 | `godot-csharp-specialist` | C# / .NET | .NET patterns, [Signal] delegates, async, nullable types, type-safe node access |
 | `godot-shader-specialist` | Shaders/Rendering | Godot shading language, visual shaders, particles, post-processing |
 | `godot-gdextension-specialist` | GDExtension | C++/Rust bindings, native performance, custom nodes, build systems |
+
+### Bevy Sub-Specialists
+
+| Agent | Subsystem | When to Use |
+| ---- | ---- | ---- |
+| `bevy-ecs-specialist` | ECS / Rust | Systems, schedules, weak ordering, observers, messages, states, queries |
+| `bevy-render-specialist` | Shaders/Rendering | WESL shaders, naga_oil translation, materials, SpriteMaterial, cameras, tonemapping |
+| `bevy-ui-specialist` | UI | bevy_ui, bevy_ui_widgets, Feathers for tools, picking, input focus, Val units |
+| `bevy-assets-specialist` | Content Pipeline | AssetServer, .meta files and processing, glTF, bsn! scenes, JSON, RON and TOML data |

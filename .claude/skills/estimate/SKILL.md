@@ -32,7 +32,7 @@ Identify files and modules that would need to change:
     approximates cyclomatic complexity (comments and strings count too); report
     it as that, never as a measured complexity.
   - **Dependencies:** what each file pulls in — `preload`/`load(` (GDScript),
-    `using` (C#), `#include` (C++) — and which other files reference it.
+    `using` (C#), `#include` (C++), `use` and `mod` (Rust) — and which other files reference it.
   - Name any file Grep could not count (missing, binary, unreadable) under Notes
     and Assumptions rather than leaving it out of the totals.
 - Identify integration points with other systems
