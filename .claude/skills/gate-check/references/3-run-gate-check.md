@@ -75,7 +75,7 @@ does not turn on.
 > - It reports a passing automated suite → the engine's test root must actually
 >   contain test files and the project must have a runner. "24 passed, 0 failed"
 >   in a repo with no test files under that root — `tests/unit/` and
->   `tests/integration/` on Godot, `Assets/Tests/` on Unity,
+>   `tests/integration/` on Godot and Bevy, `Assets/Tests/` on Unity,
 >   `Source/<Module>/Private/Tests/` on Unreal — and no runner is a finding, not
 >   evidence.
 > - It marks a critical path PASS → the code for that path must exist in the code
@@ -108,13 +108,18 @@ A report whose `Focus:` line names one pass only (a `consistency` or
   **If no runner is configured, that is `NOT ASSESSED`, not a silent skip** — see
   the trigger in the verdict section. A gate that ran no tests found no test
   failures, which is not the same as passing.
+  On Bevy, `cargo test` exits 0 over zero tests and leaves out, with no error, a
+  test file no `mod` reaches (`.claude/docs/directory-structure.md`). A run of zero
+  tests is `NOT ASSESSED`; report any test file its `main.rs` does not reach as a
+  test that did not run.
   A test failure's effect on the verdict depends on the `testing.strict` block
   **resolved in Phase 1** (`resolve_config` merges `project.local.yaml` over
   `project.yaml`; reading the file directly would drop a local override), per
   test type:
-  - **Logic** — unit-level failures (`tests/unit/` on Godot, Edit Mode on
+  - **Logic** — unit-level failures (`tests/unit/` on Godot, `tests/unit/` and
+    `#[cfg(test)]` modules on Bevy, Edit Mode on
     Unity), gated by `testing.strict.logic`.
-  - **Integration** — failures in `tests/integration/` on Godot, Play Mode on
+  - **Integration** — failures in `tests/integration/` on Godot and Bevy, Play Mode on
     Unity, gated by `testing.strict.integration`. On Unreal, where one root
     (`Source/<Module>/Private/Tests/`) holds both, classify a failure by its
     story's Type, or apply the stricter of the two levels when that is unknown.

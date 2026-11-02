@@ -91,7 +91,9 @@ Full-read a story only when its Test Evidence section is missing or ambiguous.
 
 Glob the engine's test root (`.claude/docs/directory-structure.md`): Godot
 `tests/unit/**/*_test.*` and `tests/integration/**/*_test.*`; Unity
-`Assets/Tests/**/*Tests.cs`; Unreal `Source/*/Private/Tests/**/*.cpp`. With no
+`Assets/Tests/**/*Tests.cs`; Unreal `Source/*/Private/Tests/**/*.cpp`; Bevy
+`tests/unit/**/*.rs` and `tests/integration/**/*.rs` without each `main.rs`, plus
+`#[cfg(test)]` modules under `src/` (Grep). With no
 engine configured, say the test index could not be built rather than reading an
 empty glob as "no tests". Build an index: system → [test file paths].
 

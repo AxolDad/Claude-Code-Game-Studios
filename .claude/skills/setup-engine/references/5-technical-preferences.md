@@ -39,6 +39,8 @@ engine-appropriate defaults. Read the existing template first, then fill in:
 - Booleans: `b` prefix (e.g., `bIsAlive`)
 - Files: Match class without prefix (e.g., `PlayerController.h`)
 
+**For Bevy** — see `references/bevy-config.md` (**B2**).
+
 ### Input & Platform Section
 
 Populate `## Input & Platform` using the answers gathered in Section 2 (or extracted
@@ -94,7 +96,8 @@ Example filled section:
   - Options: `[A] Set defaults now (60fps, 16.6ms frame budget, engine-appropriate draw call limit)` / `[B] Leave as [TO BE CONFIGURED] — I'll set these when I know my target hardware`
   - If [A]: populate with the suggested defaults. If [B]: leave as placeholder.
 - **Testing**: Suggest the engine-appropriate framework — **gdUnit4** for Godot,
-  NUnit for Unity, Automation Spec for Unreal — and ask before adding.
+  NUnit for Unity, Automation Spec for Unreal, Rust's built-in test harness
+  (`cargo test`, nothing to install) for Bevy — and ask before adding.
   > **Must match `commands.test` in Section 5.5.1, which writes gdUnit4's own
   > runner (`res://addons/gdUnit4/bin/GdUnitCmdTool.gd`), and
   > `.claude/docs/coding-standards.md`, which names the same runner.** Naming GUT
@@ -156,11 +159,13 @@ Also populate the `## Engine Specialists` section in `technical-preferences.md` 
 | General architecture review | unreal-specialist |
 ```
 
+**For Bevy** — see `references/bevy-config.md` (**B3**).
+
 ### Collaborative Step
 Present the filled-in preferences to the user. For Godot, include the chosen language and note where the full naming conventions and routing tables live:
 > "Here are the default technical preferences for [engine] ([language if Godot]). The naming conventions and specialist routing are in this skill's references directory — I'll apply the [GDScript/C#/Both] variant. Want to customize any of these, or may I save them to `.claude/docs/technical-preferences.md`?"
 
-For all other engines, present the defaults directly without referencing the appendix.
+For Bevy, say the same without the language variant: there is only one. For all other engines, present the defaults directly without referencing the appendix.
 
 Wait for approval before writing the file.
 

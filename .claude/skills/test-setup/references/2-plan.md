@@ -13,8 +13,8 @@ Based on the engine detected and the existing state, present a plan:
 I will create the following (skipping any that already exist):
 
 tests/
-  unit/           — Isolated unit tests for formulas, state, and logic   (Godot only)
-  integration/    — Cross-system tests and save/load round-trips         (Godot only)
+  unit/           — Isolated unit tests for formulas, state, and logic   (Godot and Bevy)
+  integration/    — Cross-system tests and save/load round-trips         (Godot and Bevy)
   smoke/          — Critical path test list (15-minute manual gate)
   README.md       — Test framework documentation
 
@@ -31,6 +31,14 @@ production/qa/
 
 Estimated time: ~5 minutes to create all files.
 ```
+
+**On Bevy, take the file list from the script instead of writing it from this
+template:** run `bash .claude/scripts/test-scaffold.sh bevy --dry-run`, list its
+`WOULD_CREATE` rows as what you will create and its `EXISTS` rows as what you will
+skip, and relay every `NEEDS` row. `NEEDS cargo_manifest Cargo.toml` and `NEEDS
+library_crate src/lib.rs` mean the tests would not build or could not import the
+game: name `/setup-engine` as the step that scaffolds them. If the script prints
+nothing, say so and stop: there is no plan to approve.
 
 Ask: "May I create these files? I will not overwrite any test files that
 already exist at these paths."

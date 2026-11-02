@@ -53,6 +53,22 @@ void UProximityComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 }
 ```
 
+Bevy:
+
+```rust
+// Local keeps the Vec between runs; clear() keeps the allocation
+fn update_proximity(
+    mut nearby_cache: Local<Vec<Entity>>,
+    grid: Res<SpatialGrid>,
+    sensors: Query<(&Transform, &ProximitySensor)>,
+) {
+    for (transform, sensor) in &sensors {
+        nearby_cache.clear();
+        grid.query_radius(transform.translation, sensor.radius, &mut nearby_cache);
+    }
+}
+```
+
 **Incorrect** (allocating in hot path):
 
 ```gdscript

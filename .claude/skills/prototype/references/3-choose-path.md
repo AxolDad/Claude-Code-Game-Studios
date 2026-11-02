@@ -87,9 +87,11 @@ multi-turn collaborative loop:
 reaching a playable state, stop. The scope is too large or the question is wrong.
 Reframe the hypothesis and simplify aggressively, or switch to Paper path.
 
-**Output:** A minimal runnable engine project in `prototypes/[name]-concept/`.
+**Output:** A minimal runnable engine project in `prototypes/[name]-concept/`. On
+Bevy there is no editor to open: that folder is its own crate with its own
+`Cargo.toml`, run with `cargo run` from there.
 
-**Lighter alternative — Love2D (Lua):** If the project engine (Godot, Unity, Unreal)
+**Lighter alternative — Love2D (Lua):** If the project engine (Godot, Unity, Unreal, Bevy)
 feels too heavy to stand up for a throwaway build, consider Love2D — a minimal 2D
 framework that installs in minutes, requires no project scaffolding, and renders
 natively with no browser latency. Used by many indie devs for rapid 2D action and

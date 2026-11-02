@@ -11,7 +11,8 @@
 - `production/qa/evidence/.gitkeep`
 - Engine-specific files
 
-After approval, create the following files:
+After approval, create the following files. **On Bevy, skip to `#### Bevy` below:**
+its script writes these two files itself, with Bevy's own content.
 
 ### `tests/README.md`
 
@@ -242,5 +243,41 @@ Test class naming: F[System][Scenario]Test — one class per test; a second
 test reusing a class name fails to link
 Test name: "<Project>.[System].[Scenario]"
 ```
+
+#### Bevy (`Engine: Bevy`)
+
+**Phases 3, 4 and 5 are one script on Bevy.** Run it after approval, and write
+none of its files by hand:
+
+```bash
+bash .claude/scripts/test-scaffold.sh bevy
+```
+
+It creates whichever of these are absent and never overwrites: `tests/README.md`,
+`production/qa/evidence/.gitkeep`, `tests/unit/main.rs`, `tests/integration/main.rs`,
+`.github/workflows/tests.yml` and `tests/smoke/critical-paths.md`. There is nothing
+to install: Rust's test harness comes with `cargo`.
+
+**Relay every row it prints.** It reports observations, and the verdict in Phase 6
+depends on them:
+
+- `CREATED`, `EXISTS`, `SKIPPED`: list them. `EXISTS` is a file left as it was.
+- `FAILED`: that file was not written. Name it.
+- `NEEDS <id> <file> <what>`: `cargo test` cannot build without `Cargo.toml`, and
+  `tests/` cannot import the game without `src/lib.rs`. Say `/setup-engine` scaffolds
+  them.
+- No rows at all: the script did not run, and nothing was created. Report
+  `NOT CREATED — test-scaffold.sh did not run`.
+
+**Tell the user how the test root works, because the failure is silent.**
+`tests/unit/main.rs` and `tests/integration/main.rs` are the two test programs Cargo
+builds. A new test module is `tests/unit/[system].rs` or `tests/unit/[system]/mod.rs`,
+declared with `mod [system];` in that `main.rs`, after its `//!` header (above it,
+the header fails with error E0753). Anywhere else, the file is never compiled and
+`cargo test` still exits 0. Each `main.rs` starts with one real example test,
+`system_runs_once_per_update` and `only_poisoned_entities_lose_health`, which test
+their own local types rather than the game: `/smoke-check` does not count them as
+game tests. Test functions are `[scenario]_[expected]`: `combat.rs` →
+`base_attack_returns_expected_damage()`.
 
 ---

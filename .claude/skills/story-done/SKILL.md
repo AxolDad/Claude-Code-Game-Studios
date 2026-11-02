@@ -150,7 +150,9 @@ By the story's type, at the Phase 1 gate level. Skip a check `qa.level` waives, 
 say so: `Test evidence: waived at qa.level minimal`.
 
 - **Logic:** the exact path in the story's Test Evidence section, else anywhere
-  under `tests/unit/[system]/`.
+  under `tests/unit/[system]/`. On Bevy also `tests/unit/[system].rs` or a
+  `#[cfg(test)]` module in `src/`. A test file no `mod` reaches is not compiled, so
+  it is not evidence.
 - **Integration:** the same under `tests/integration/[system]/`, else a playtest
   record naming this story in `production/qa/playtests/` (`/playtest-report`
   writes them there).

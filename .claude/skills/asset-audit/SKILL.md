@@ -73,7 +73,7 @@ Asset Standards section sets budgets, formats and the naming convention.
 
 ## Phase 2: Scan Asset Directories
 
-Assets live under the engine's asset root: `assets/` on Godot, `Assets/` on
+Assets live under the engine's asset root: `assets/` on Godot and Bevy, `Assets/` on
 Unity, `Content/` on Unreal. Resolve the engine and its code root per
 `.claude/docs/code-root-resolution.md`; that code root is the one Phase 3's
 orphan and missing-asset searches read. If it is unresolved, stop:
@@ -85,6 +85,7 @@ Scan the asset root using Glob:
   `assets/shaders/**/*`, `assets/data/**/*`
 - **Unity** — `Assets/**/*`, leaving out scripts (`*.cs`, `*.asmdef`) and `*.meta` files
 - **Unreal** — `Content/**/*.uasset` and `Content/**/*.umap`
+- **Bevy** — `assets/**/*`, leaving out `*.meta` files (settings the asset processor writes beside a processed asset) and `.gitkeep`
 
 The files matched are `Total assets scanned`. If there are none, the checks on
 scanned files — Naming, Size, Format, Orphaned — are
@@ -99,7 +100,7 @@ scanned files — Naming, Size, Format, Orphaned — are
 - Audio: `[category]_[context]_[name]_[variant].[ext]`
 - All files must be lowercase with underscores
 
-These are Godot's conventions. Unity and Unreal name assets in PascalCase, so on
+These are Godot's conventions, applied on Bevy too. Unity and Unreal name assets in PascalCase, so on
 those engines check names only against a naming rule the art bible states; with
 none, Naming is `NOT ASSESSED — no naming rule for <engine>` (name `/art-bible`).
 
@@ -121,7 +122,9 @@ format or dimensions, so Format is `NOT ASSESSED` there; its size is still measu
 Both searches need code: if the code root holds no source files, Orphaned and
 Missing are `NOT ASSESSED — no code to search`. On Unity and Unreal most asset
 references live in scenes, prefabs and other assets rather than code, so an
-asset no code names may still be in use: Orphaned is `NOT ASSESSED` there.
+asset no code names may still be in use: Orphaned is `NOT ASSESSED` there. On
+Bevy asset paths are strings built in Rust code, so a search cannot prove a file
+unused or a reference complete: Orphaned and Missing are both `NOT ASSESSED` there.
 
 ---
 

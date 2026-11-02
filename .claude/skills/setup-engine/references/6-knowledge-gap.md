@@ -13,6 +13,7 @@ Check whether the engine version is likely beyond the LLM's training data.
 - Godot: training data likely covers up to ~4.3
 - Unity: training data likely covers up to ~2022 LTS (2022.3)
 - Unreal: training data likely covers up to ~5.3
+- Bevy: training data likely covers up to ~0.16
 
 > **This table goes stale silently, and a stale table fails in the dangerous
 > direction only if it is too *new*.** A cutoff left unchanged for a year after

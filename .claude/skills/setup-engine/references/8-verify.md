@@ -40,8 +40,9 @@ bash .claude/scripts/project-coherence.sh
 ```
 
 It compares `project.yaml` against `docs/engine-reference/<engine>/VERSION.md`,
-against `project.godot`, and against the engine binary actually on PATH, and it
-checks that the files `commands.build` and `commands.test` name exist.
+against `project.godot`, and against the engine binary actually on PATH (on Bevy,
+which has no binary, against the `bevy` package in `Cargo.lock`), and it checks
+that the files `commands.build` and `commands.test` name exist.
 
 **Report every `[DIFFERS]` line to the user and resolve it before finishing.**
 Each one means two files this skill just wrote disagree, or describe something
@@ -54,7 +55,9 @@ line as expected, name `/test-setup` as the step that clears it, and never edit
 
 **`[NOT CHECKED]` is not a pass.** Each such line names why a comparison could
 not be made -- an absent binary, a missing `project.godot`. Say which ones
-applied. A comparison that could not run has not established agreement.
+applied. A comparison that could not run has not established agreement. On Bevy,
+`no Cargo.lock with a bevy package` means Section 7.5's `cargo check` did not
+finish; say that, and that the first successful build clears it.
 
 The script emits observations and never a verdict, per the convention in
 CLAUDE.md. The judgement is yours and the user's.

@@ -19,7 +19,10 @@ For each story in scope:
 1. Extract the system slug from the story's file path
    (e.g., `production/epics/combat/story-001.md` → `combat`)
 2. Glob `tests/unit/[system]/` and `tests/integration/[system]/` for files
-   whose name contains the story slug or a closely related term
+   whose name contains the story slug or a closely related term. On Bevy, glob
+   `tests/unit/[system].rs` and `tests/unit/[system]/mod.rs` and the same under
+   `integration/`; one named in an `uncompiled` row from Phase 2 is **MISSING**, since
+   no test in it ran
 3. Check the story file itself for a `Test file:` header field or a
    "Test Evidence" section
 

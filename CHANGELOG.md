@@ -8,6 +8,47 @@ existing project on the older config files.
 
 ---
 
+## Unreleased
+
+**Bevy 0.20 joins Godot, Unity and Unreal as a fourth engine.** Nothing changes
+for projects on the other three, and the default stays Godot. `framework.version`
+stays 1.2.0 until a release carries this.
+
+### Added
+
+- **`/setup-engine bevy`.** The language is Rust, with no language question. The
+  version comes from crates.io, because Bevy's setup guide still shows an older
+  one. It scaffolds `Cargo.toml`, `src/lib.rs`, a thin `src/main.rs` and `assets/`,
+  and never replaces an existing `Cargo.toml`. There is no engine binary:
+  `cargo --version` and `rustc --version` probe the toolchain.
+- **Five specialists**, which brings the studio to 54 agents: `bevy-specialist`,
+  `bevy-ecs-specialist`, `bevy-render-specialist`, `bevy-ui-specialist` and
+  `bevy-assets-specialist`, each with a spec under `studio-tests/agents/engine/bevy/`.
+- **`docs/engine-reference/bevy/`**, written from the 0.20 release notes, the 0.19
+  to 0.20 migration guide and Bevy's source, because 0.20 is newer than the model's
+  training data.
+- **Tests that cannot pass by accident.** Cargo finds only `tests/*.rs` and
+  `tests/*/main.rs`: a test file no `mod` reaches is never compiled, and
+  `cargo test` still exits 0. `/test-setup` scaffolds `tests/unit/main.rs` and
+  `tests/integration/main.rs`, each with one real test, plus a CI workflow.
+  `test-run.sh bevy` builds first, reports each uncompiled file, and reports no
+  tests as `bevy:zero-tests`, never as a pass. Screenshot capture needs a GPU and
+  a window; without them a run reports `NOT VERIFIED`.
+- **The helper scripts know Bevy.** `asset-scan.sh`, `content-count.sh`,
+  `project-coherence.sh`, `flaky-stats.sh`, `project-state.sh` and `write-guard.sh`
+  all resolve it, and `project-coherence.sh` compares `engine.version` with the
+  `bevy` package in `Cargo.lock`. Where a check does not apply, it says so: asset
+  orphan and missing-reference checks report `not_run`, and level counts report
+  `not_counted`.
+- **WESL in the rules.** `shader-code.md` also loads on `.wesl` and `.wgsl` files
+  and covers the move from the naga_oil dialect. `engine-code.md`,
+  `gameplay-code.md`, `test-standards.md` and the `qa-tester` agent gain Rust
+  examples. Bevy scenes are the `bsn!` macro and code: the `.bsn` file format is
+  future work in 0.20, so no rule or script treats it as a scene file. RON and
+  TOML data files are not validated by the hooks; JSON still is.
+
+---
+
 ## [1.2.0] — 2026-10-19
 
 **The story skills are rebuilt around shared helper scripts, a read guard stops

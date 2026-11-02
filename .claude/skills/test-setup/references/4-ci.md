@@ -10,6 +10,7 @@
 - Godot 4
 - Unity
 - Unreal Engine
+- Bevy
 
 ### Godot 4
 
@@ -179,5 +180,17 @@ editor target in `Source/[ProjectName]Editor.Target.cs`. `actions/checkout@v7`
 and `actions/upload-artifact@v7` run on Node.js 24, which needs Actions Runner
 2.327.1 or newer: update the self-hosted runner before the first run
 (https://github.com/actions/checkout/blob/v7.0.1/README.md).
+
+### Bevy
+
+`test-scaffold.sh bevy` wrote `.github/workflows/tests.yml` in Phase 3, unless one
+existed already. Do not write another. It runs on `ubuntu-latest`, installs Bevy's
+Linux packages with `apt`, installs stable Rust with `rustup`, and runs
+`cargo test --no-fail-fast` into `test-results/cargo-test.log`. Because `cargo test`
+exits 0 over zero tests, its `Check Tests Ran` step fails the job when no test ran.
+It needs no secret and no self-hosted runner.
+
+If the row for it was `EXISTS`, the project's own workflow was left alone: say that it
+has not been checked for that zero-test step.
 
 ---

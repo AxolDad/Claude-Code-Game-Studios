@@ -113,6 +113,18 @@ Saved/
 # *.uasset
 # *.umap
 
+# === Engine: Bevy ===
+# Cargo's build output. No internal `/`, so it matches at any depth.
+target/
+# Cargo.lock stays tracked: it records the exact Bevy version this project builds
+# against, and project-coherence.sh compares it with engine.version.
+# Cargo builds extra binaries from src/bin/, which Build Output's `bin/` would hide.
+!src/bin/
+# Run-and-observe captures land here before they move to production/qa/evidence/.
+/screenshot-*.png
+# Uncomment if using Bevy's asset processor (its output folder):
+# imported_assets/
+
 # === Compiled Shaders ===
 *.spv
 *.cso

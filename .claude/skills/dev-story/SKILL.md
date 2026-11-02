@@ -4,7 +4,7 @@ description: "Implements one story in code with tests, following its ADRs. Use w
 argument-hint: "[story-path]"
 user-invocable: true
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Write, Edit, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/dev-story/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash .claude/scripts/story-facts.sh *), Bash(bash .claude/scripts/adr-status.sh *), Bash(bash .claude/scripts/md-section.sh *), Bash(bash .claude/scripts/session-state.sh *), Bash(bash .claude/scripts/review-receipts.sh hash *), Bash(godot *), Bash(mkdir -p production/qa/evidence/*)
+allowed-tools: Read, Glob, Grep, Write, Edit, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/dev-story/../../hooks/yaml-helper.sh" resolve_config *), Bash(bash .claude/scripts/story-facts.sh *), Bash(bash .claude/scripts/adr-status.sh *), Bash(bash .claude/scripts/md-section.sh *), Bash(bash .claude/scripts/session-state.sh *), Bash(bash .claude/scripts/review-receipts.sh hash *), Bash(godot *), Bash(mkdir -p production/qa/evidence/*), Bash(cargo check), Bash(cargo check --tests), Bash(CI_TESTING_CONFIG=* timeout 1800 cargo run --features bevy/bevy_ci_testing*), Bash(rm -f screenshot-*.png), Bash(mv screenshot-*.png production/qa/evidence/*)
 model: sonnet
 ---
 
@@ -25,8 +25,8 @@ result parses and looks right, and hands off.
 **Writes** (each after an ask that names it): the story's `Status`, `Last Updated`
 and `## Files`, and its `production/sprint-status.yaml` entry. The programmer agents
 write the code and tests under the code root and test root
-(`.claude/docs/code-root-resolution.md`). The session checkpoint and the evidence
-stamp are written without an ask.
+(`.claude/docs/code-root-resolution.md`). The session checkpoint, the evidence
+stamp and Bevy's capture config are written without an ask.
 **Next:** `/story-done [story-path]`; at `standard` and `full`, `/code-review
 [files]` first.
 
@@ -173,7 +173,9 @@ paste whole documents into it.
   - `standard`: "Write the test at [path] with the code. Each acceptance criterion
     needs at least one test function." Naming per engine from
     `.claude/rules/test-standards.md`. No random seeds, no time-dependent
-    assertions, no external I/O.
+    assertions, no external I/O. On Bevy, add: "A new `tests/unit/[system].rs` needs
+    `mod [system];` in `tests/unit/main.rs`, after its `//!` header. Without that line
+    it is never compiled and `cargo test` still exits 0."
   - `full`: the same, and "every criterion must be covered: `/story-done` blocks on
     any untested one."
 - **Output:** the files created or changed, the test functions written, any
@@ -181,6 +183,8 @@ paste whole documents into it.
 - **Boundaries:** write code only under the resolved code root and tests only under
   the test root. Code root unresolved: write nothing and report it. Touch no file
   outside the story's scope: report the need instead. Doc comments on public APIs.
+  On Bevy, game code goes in the library (`src/lib.rs` and its modules), never in
+  `src/main.rs`, which `tests/` cannot import.
   An architectural choice the ADR does not cover: report the plan, don't decide it.
   No helper or abstraction for a one-time use, no error handling for cases that
   cannot happen (validate at input and data-file boundaries only), and general logic,
@@ -216,7 +220,9 @@ further past what it blocks, and give a partial report
 story, look for the file at the Test Evidence path. Missing: at the type's BLOCKING
 level on the `gate_level` line, flag "story unverifiable — test required before
 `/story-done`"; at ADVISORY, note it as a recommendation. At `minimal` there is
-nothing to check: tests are waived.
+nothing to check: tests are waived. On Bevy the file is not enough: Grep that root's
+`main.rs` for `mod [system];`. A file no `mod` line reaches is never compiled, so
+it gets the same flag.
 
 **Does it parse?** Run the check whose exit code answers it, and report the
 command, the exit code and any error lines:
@@ -228,7 +234,7 @@ command, the exit code and any error lines:
   `commands.test` names when its file name says godot (a wrapper such as `bash
   run-tests.sh` is not the editor), else `engine.path`, else `godot`. Never search the disk for
   one: when none of the three runs, the check is not verified.
-- **Unity, Unreal:** read `references/engine-checks.md`.
+- **Unity, Unreal, Bevy:** read `references/engine-checks.md`.
 - **No engine executable:** `parse NOT VERIFIED — engine binary not available`.
   Never infer from reading the code that it parses.
 
@@ -236,7 +242,8 @@ command, the exit code and any error lines:
 can see (every Visual/Feel and UI story, and any other with a surface): launch
 straight into the scene the story touched, capture a screenshot straight into
 `production/qa/evidence/[story-slug]/` (`[story-slug]` is the story file's name
-without `.md`; `mkdir -p` the folder first), stamp it with
+without `.md`; `mkdir -p` the folder first; on Bevy the capture lands in the project
+root and is moved there, as `references/engine-checks.md` gives it), stamp it with
 `bash .claude/scripts/review-receipts.sh hash <each changed file> > production/qa/evidence/[story-slug]/stamp.txt`,
 then open the image and compare it with the criteria. Not waived at `qa.level:
 minimal`. Report exactly one line, plain text starting `Run result:` (no bold:
@@ -251,7 +258,8 @@ minimal`. Report exactly one line, plain text starting `Run result:` (no bold:
 Only the feel half of a Visual/Feel criterion (timing, weight) is DEFERRED to
 `/team-qa`: a still cannot show it.
 
-This skill pre-approves `godot` on PATH. An engine run through `engine.path` or
+This skill pre-approves `godot` on PATH and Bevy's `cargo` commands in
+`references/engine-checks.md`. An engine run through `engine.path` or
 the executable `commands.test` names asks first: the user approves it once, or
 adds `Bash(<that executable> *)` to `.claude/settings.local.json`.
 

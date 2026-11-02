@@ -32,6 +32,11 @@ Use WebSearch and WebFetch to locate the official migration guide between
 - Search: `"[engine] [new-version] breaking changes changelog"`
 - Fetch the migration guide URL from VERSION.md if one is already recorded,
   or use the URL found via search.
+- **Bevy** publishes one guide per minor release, at a fixed address:
+  `https://bevy.org/learn/migration-guides/<old>-to-<new>/`, such as `0-19-to-0-20`.
+  Fetch it directly, and fetch each one in turn when the upgrade crosses more than
+  one minor. Look for a patch upgrade's changes (`0.20.0` → `0.20.1`) with the
+  searches above.
 
 Extract: renamed APIs, removed APIs, changed defaults, behavior changes, and
 any "must migrate" items.
@@ -44,6 +49,8 @@ target version:
 - Use Grep to search for deprecated API names extracted from the migration
   guide (e.g., old function names, removed node types, changed property names)
 - List each file that matches, with the specific API reference found
+- On Bevy, scan `tests/` as well: tests are Rust that compiles against the same
+  crate, so a renamed API breaks them too
 
 Present the audit results as a table:
 
@@ -79,6 +86,10 @@ Ask the user before making any changes:
 > (This will update the pinned version and add migration notes — it does NOT
 > change any source files. Source migration is done manually or via stories.)"
 
+On Bevy, add that Step 5 also moves the crate, which changes `Cargo.toml` or
+`Cargo.lock` but no source file, so across a minor the code will not compile until
+the audit's files are migrated.
+
 Wait for explicit confirmation before continuing.
 
 ### Step 5 — Update VERSION.md
@@ -102,6 +113,17 @@ After confirmation:
    first, then update `engine.version` to `[new-version]` so the primary config
    store stays in sync with VERSION.md.
 
+4. **On Bevy, move the crate — the version pin alone changes nothing that builds.**
+   - Within a minor (`0.20.0` → `0.20.1`): `cargo update`.
+   - Across minors: `cargo update` will not cross one, because Cargo treats each `0.x`
+     as breaking. Ask "May I change `bevy = "<old>"` to `bevy = "<new>"` in
+     `Cargo.toml`?", Edit that line, then run `cargo update`. Any third-party Bevy crate
+     must move to a release for the new minor too: check them before editing.
+     Declined: report `Cargo.toml still on [old]`, and say that
+     `project-coherence.sh` reports a `[DIFFERS]` line until it moves.
+   - Re-run Section 3's probe for the new version: its minimum Rust version may have
+     risen. Update the `Installed at pin time` row with the result.
+
 ### Step 6 — Post-Upgrade Reminder
 
 After updating VERSION.md, output:
@@ -118,5 +140,9 @@ Next steps:
 4. If any ADRs are invalidated, run /propagate-design-change to update
    downstream stories
 ```
+
+On Bevy, step 2 reads instead: `Run cargo check and cargo check --tests, which report
+what still needs migrating, then /setup-engine refresh` — there is no engine binary to
+upgrade.
 
 ---

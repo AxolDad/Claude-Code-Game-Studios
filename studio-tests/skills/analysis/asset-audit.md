@@ -3,7 +3,7 @@
 ## Skill Summary
 
 `/asset-audit` audits the engine's asset root — `assets/` (art, audio, vfx,
-shaders, data) on Godot, `Assets/` on Unity, `Content/` on Unreal — for naming
+shaders, data) on Godot and Bevy, `Assets/` on Unity, `Content/` on Unreal — for naming
 convention compliance, size budgets, format standards, orphaned assets and
 missing assets. It reads the art bible or asset standards from the design docs
 (Phase 1), resolves the engine and its code root and scans the asset root with
@@ -281,7 +281,7 @@ Fixture defaults.
 ## Protocol Compliance
 
 - [ ] Reads the art bible or asset standards design docs before scanning (Phase 1)
-- [ ] Resolves the engine and its code root, then scans that engine's asset root with Glob (`assets/` subfolders on Godot, `Assets/` on Unity, `Content/` on Unreal); an unresolved engine stops the run as NOT ASSESSED
+- [ ] Resolves the engine and its code root, then scans that engine's asset root with Glob (`assets/` subfolders on Godot and Bevy, `Assets/` on Unity, `Content/` on Unreal); an unresolved engine stops the run as NOT ASSESSED
 - [ ] Report uses one table per category: Naming (File, Expected Pattern, Issue), Size (File, Budget, Actual, Overage), Format (File, Expected Format, Actual Format), Orphaned (File, Last Modified, Size, Recommendation), Missing (Reference Location, Expected Path)
 - [ ] A size or format it cannot measure is `NOT ASSESSED`, never an estimate, and every section not assessed is named with its reason
 - [ ] Each recommendation names the change for its violation (target resolution or compression, corrected name, target format)
@@ -300,6 +300,9 @@ Fixture defaults.
   and Unreal it is NOT ASSESSED (Case 8).
 - Unity follows Case 8's naming and orphan rules, with Format still checked on
   the source files under `Assets/`; it is not tested separately.
+- Bevy scans `assets/` and is not tested separately. `asset-scan.sh --engine bevy`
+  applies the lowercase-with-underscores rule and reports the orphan and
+  missing-reference checks as `not_run`.
 - `/asset-audit` checks compliance against code references; `/content-audit`
   checks completeness against the GDDs. Case 4 pins that boundary.
 - An audio duration budget is not measurable with the skill's tools, so it makes

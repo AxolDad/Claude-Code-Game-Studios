@@ -13,20 +13,21 @@
 # /smoke-check, which also decides what an unmatched exit code means.
 #
 # Usage: bash .claude/scripts/test-run.sh <engine> [options]
-#   <engine>            godot, unity or unreal (any case)
+#   <engine>            godot, unity, unreal or bevy (any case)
 #   --cmd COMMAND       the test command to run, instead of project.yaml's
 #                       commands.test or the engine's default
 #   --exe PATH          the editor executable (default: the one commands.test
 #                       names, for godot only when its name says godot, else
 #                       engine.path, else godot / Unity on PATH); for unreal,
-#                       the UE root
+#                       the UE root; for bevy, cargo (commands.test's program
+#                       only when its name says cargo, else cargo on PATH)
 #   --platform P        unity only: editmode (default) or playmode
-#   --timeout SECONDS   default 900; 1800 for unreal
+#   --timeout SECONDS   default 900; 1800 for unreal and bevy
 #   --os windows|linux|macos
 #                       unreal only: default is read from `uname -s`
 #   --filter ROOT       unreal only: the automation test root (default: the
 #                       .uproject's name); read one test name when unsure
-#   --no-build          unreal only: skip the build that comes first
+#   --no-build          unreal and bevy: skip the build that comes first
 #   --tool T            force the timeout tool: timeout, gtimeout, perl or none (the
 #                       tests use this to reach the perl and no-tool paths)
 #   --log FILE          keep the runner's output here (default: a temp file); the
@@ -50,14 +51,19 @@
 # against the last good binaries or not load at all. A check that fails runs
 # nothing and prints why. The import and the build each have a row saying what
 # runs, or why it does not, and their output goes to its own log (pre_log), so
-# nothing they print is read as the tests' output.
+# nothing they print is read as the tests' output. bevy checks Cargo.toml exists,
+# then builds the tests first (`cargo test --no-run`) for the same reason as
+# unreal: a compile error is its own result, never a failed test. It also lists
+# any .rs file under tests/unit or tests/integration that no `mod` declaration
+# reaches: Cargo finds only tests/*.rs and tests/*/main.rs, so such a file is
+# silently not compiled and `cargo test` still exits 0.
 #
 # Output: TSV, in this order (a row that cannot apply is left out).
-#   engine      <Godot|Unity|Unreal>
+#   engine      <Godot|Unity|Unreal|Bevy>
 #   exe         <path|->  <commands.test|engine.path|path|--exe|->
 #   command     <--cmd|commands.test|default>  <the command>
 #   import      <command> | - <skipped: why>                godot, before the tests
-#   build       <command> | - <skipped: why>                unreal, before the tests
+#   build       <command> | - <skipped: why>                unreal and bevy, before the tests
 #   timeout     <seconds>  <timeout|gtimeout|perl|none>
 #   precheck    <what>  <present|absent>
 #   import_exit, build_exit   <code>                        when it ran
@@ -66,10 +72,12 @@
 #   exit        <code of the test command>
 #   timed_out   <yes|no>
 #   results_file  <path>  <present|absent>                  unity
-#   zero_tests  <yes|no|unknown>  <the marker line, or ->   godot, unity, unreal
+#   zero_tests  <yes|no|unknown>  <the marker line, or ->   godot, unity, unreal, bevy
 #   tests       total=<n> passed=<n> failed=<n>             unity (the <test-run> element),
-#                                                           unreal (Result={...} lines);
+#                                                           unreal (Result={...} lines),
+#                                                           bevy (`test result:` lines);
 #                                                           godot: `-  not sourced`
+#   uncompiled  <path>                                      bevy: a test file no `mod` reaches
 #   failed      <a line naming a failing test>  (up to 10, then `failed_more <n>`)
 #   evidence    <a line that backs the rule>
 #   rule        <id>  <what that row of the ladder says>     `-` when no row fits
@@ -80,7 +88,9 @@
 # unity:no-test-framework, unity:0, unity:zero-tests, unity:no-count,
 # unity:no-results, unity:2, unity:1, unity:3, unity:4, unity:other,
 # unreal:mac-unsourced, unreal:build-failed, unreal:result-fail,
-# unreal:no-tests-matched, unreal:pass, unreal:other-nonzero.
+# unreal:no-tests-matched, unreal:pass, unreal:other-nonzero,
+# bevy:no-manifest, bevy:build-failed, bevy:0, bevy:zero-tests, bevy:test-failed,
+# bevy:other.
 #
 # Exit codes: 0 the helper finished (whatever the tests did: read the rows);
 # 1 cannot read the root or write the log; 2 usage error; 3 unknown engine.
@@ -121,13 +131,15 @@ case "$(printf '%s' "$ENGINE_ARG" | tr 'A-Z' 'a-z')" in
   godot) ENGINE=godot; ENAME=Godot ;;
   unity) ENGINE=unity; ENAME=Unity ;;
   unreal) ENGINE=unreal; ENAME=Unreal ;;
-  *) echo "test-run: '$ENGINE_ARG' is not an engine this knows (godot, unity, unreal)" >&2; exit 3 ;;
+  bevy) ENGINE=bevy; ENAME=Bevy ;;
+  *) echo "test-run: '$ENGINE_ARG' is not an engine this knows (godot, unity, unreal, bevy)" >&2; exit 3 ;;
 esac
 case "$PLATFORM" in editmode|playmode) ;; *) usage "--platform is editmode or playmode" ;; esac
 case "$OS_ARG" in ""|windows|linux|macos) ;; *) usage "--os is windows, linux or macos" ;; esac
 # /smoke-check Phase 2's limits: `timeout 900` for a test run, `timeout 1800` for
-# Unreal, whose editor build and start-up come before any test.
-if [ -z "$TIMEOUT" ]; then if [ "$ENGINE" = unreal ]; then TIMEOUT=1800; else TIMEOUT=900; fi; fi
+# Unreal, whose editor build and start-up come before any test, and for Bevy,
+# whose first build compiles the whole engine.
+if [ -z "$TIMEOUT" ]; then if [ "$ENGINE" = unreal ] || [ "$ENGINE" = bevy ]; then TIMEOUT=1800; else TIMEOUT=900; fi; fi
 case "$TIMEOUT" in ''|*[!0-9]*) usage "--timeout is whole seconds" ;; esac
 [ "$TIMEOUT" -gt 0 ] || usage "--timeout must be above 0"
 
@@ -165,10 +177,17 @@ else
     _base=${first##*/}; _base=$(printf '%s' "${_base##*\\}" | tr 'A-Z' 'a-z')
     case "$_base" in *godot*) ;; *) first="" ;; esac
   fi
+  # The same for Bevy: the build runs `<exe> test --no-run`, which a wrapper
+  # script would not understand.
+  if [ "$ENGINE" = bevy ]; then
+    _base=${first##*/}; _base=$(printf '%s' "${_base##*\\}" | tr 'A-Z' 'a-z')
+    case "$_base" in *cargo*) ;; *) first="" ;; esac
+  fi
   if [ "$ENGINE" != unreal ] && exe_ok "$first"; then EXE="$first"; EXE_SRC="commands.test"
   elif [ -n "$ENGINE_PATH" ] && { [ "$ENGINE" = unreal ] && [ -d "$ENGINE_PATH" ] || { [ "$ENGINE" != unreal ] && exe_ok "$ENGINE_PATH"; }; }; then EXE="$ENGINE_PATH"; EXE_SRC="engine.path"
   elif [ "$ENGINE" = godot ] && exe_ok godot; then EXE="godot"; EXE_SRC="path"
   elif [ "$ENGINE" = unity ] && exe_ok Unity; then EXE="Unity"; EXE_SRC="path"
+  elif [ "$ENGINE" = bevy ] && exe_ok cargo; then EXE="cargo"; EXE_SRC="path"
   fi
 fi
 printf 'exe\t%s\t%s\n' "${EXE:--}" "$EXE_SRC"
@@ -256,6 +275,11 @@ case "$ENGINE" in
         CMD="" ;;
     esac
     ;;
+  bevy)
+    # --no-fail-fast: Cargo otherwise stops at the first failing test binary, and
+    # the counts below would leave out every binary after it.
+    CMD="\"${EXE:-cargo}\" test --no-fail-fast 2>&1"
+    ;;
 esac
 # commands.test and --cmd win over the default. Unreal keeps the build first.
 if [ -n "$CMD_ARG" ]; then CMD="$CMD_ARG"; CMD_SRC="--cmd"
@@ -267,7 +291,7 @@ if [ "$ENGINE" = unity ] && [ "$CMD_SRC" != default ]; then
   named=${named#\"}; named=${named%\"}
   [ -n "$named" ] && RESULTS="$named"
 fi
-# The step before the tests: Godot's import, Unreal's build.
+# The step before the tests: Godot's import, Unreal's and Bevy's build.
 PRE_NAME=""; PRE_CMD=""; PRE_WHY=""
 case "$ENGINE" in
   godot)
@@ -279,6 +303,11 @@ case "$ENGINE" in
     if [ "$NOBUILD" = 1 ]; then PRE_WHY="skipped: --no-build"
     elif [ -z "$EXE" ]; then PRE_WHY="skipped: no UE root (--exe or engine.path)"
     else PRE_CMD="$BUILD"; fi ;;
+  bevy)
+    PRE_NAME=build
+    if [ "$NOBUILD" = 1 ]; then PRE_WHY="skipped: --no-build"
+    elif [ -z "$EXE" ]; then PRE_WHY="skipped: no cargo (--exe, commands.test, PATH)"
+    else PRE_CMD="\"$EXE\" test --no-run 2>&1"; fi ;;
 esac
 [ -n "$CMD" ] && printf 'command\t%s\t%s\n' "$CMD_SRC" "$CMD"
 if [ -n "$PRE_CMD" ]; then printf '%s\t%s\n' "$PRE_NAME" "$PRE_CMD"
@@ -305,6 +334,16 @@ case "$ENGINE" in
       printf 'precheck\tmacos test command\tabsent\n'
       ran_no unreal:mac-unsourced "no sourced Unreal test command on macOS and no commands.test" "no sourced Unreal test command on macOS: set commands.test"
     fi ;;
+  bevy)
+    if [ -f Cargo.toml ]; then printf 'precheck\tCargo.toml\tpresent\n'
+    else
+      printf 'precheck\tCargo.toml\tabsent\n'
+      ran_no bevy:no-manifest "no Cargo.toml in the project root" "no Cargo.toml, so there is no crate to test"
+    fi
+    # Not a stop: unit tests in a binary crate still run. But tests/ can import
+    # game code only from a library crate, so its absence explains a tests/ that
+    # cannot reach anything.
+    if [ -f src/lib.rs ]; then printf 'precheck\tsrc/lib.rs\tpresent\n'; else printf 'precheck\tsrc/lib.rs\tabsent\n'; fi ;;
 esac
 if [ -z "$EXE" ] && [ "$CMD_SRC" = default ]; then
   ran_no runner-unavailable "no editor executable (commands.test, engine.path, PATH)" "the engine executable was not found, so the tests could not be run here"
@@ -331,11 +370,19 @@ fi
 # is a failure): the editor would load the last good binaries, or none.
 if [ "$PRE_NAME" = build ] && [ -n "$PRE_CMD" ] && [ "$PRE_CODE" != 0 ]; then
   if [ "$PRE_TIMED" = yes ]; then
-    printf 'ran\tno\tthe editor build timed out after %ss\n' "$TIMEOUT"
+    if [ "$ENGINE" = bevy ]; then _bw="the test build"; else _bw="the editor build"; fi
+    printf 'ran\tno\t%s timed out after %ss\n' "$_bw" "$TIMEOUT"
     printf 'rule\ttimeout\tthe build did not complete: timed out after %ss, so nothing was verified\n' "$TIMEOUT"
   else
-    printf 'ran\tno\tthe editor build failed (exit %s)\n' "$PRE_CODE"
-    printf 'rule\tunreal:build-failed\tthe editor build failed, so no test ran\n'
+    if [ "$ENGINE" = bevy ]; then
+      printf 'ran\tno\tthe test build failed (exit %s)\n' "$PRE_CODE"
+      e=$(grep -E -m 1 '^error' "$PRE_LOG" 2>/dev/null | head -1 | tr -d '\r')
+      [ -n "$e" ] && printf 'evidence\t%s\n' "$e"
+      printf 'rule\tbevy:build-failed\tthe test build failed (a compile error), so no test ran\n'
+    else
+      printf 'ran\tno\tthe editor build failed (exit %s)\n' "$PRE_CODE"
+      printf 'rule\tunreal:build-failed\tthe editor build failed, so no test ran\n'
+    fi
   fi
   printf 'pre_log\t%s\n' "$PRE_LOG"
   exit 0
@@ -427,6 +474,50 @@ case "$ENGINE" in
     elif [ "$CODE" = 0 ] && [ "$nok" -gt 0 ]; then set_rule unreal:pass "exit 0 with Result={Success} lines"
     elif [ "$CODE" != 0 ]; then set_rule unreal:other-nonzero "a non-zero exit with no Result={Fail} line and no 'no tests matched': no test ran"
     fi ;;
+  bevy)
+    # Cargo prints one `test result:` line per test binary, the empty ones too.
+    # Their sum is the count; `running N tests` would also count what a filter
+    # skipped. Ignored tests did not run, so they are not in the total.
+    counts=$(tr -d '\r' < "$LOG" | awk '/^test result:/ {
+        for (i = 3; i <= NF; i++) {
+          if ($i ~ /^passed/) p += $(i - 1)
+          if ($i ~ /^failed/) f += $(i - 1)
+        }
+      } END { printf "%d %d", p, f }' 2>/dev/null)
+    npass=${counts%% *}; nfail=${counts##* }
+    npass=${npass:-0}; nfail=${nfail:-0}
+    total=$((npass + nfail))
+    printf 'tests\ttotal=%s passed=%s failed=%s\n' "$total" "$npass" "$nfail"
+    marker=$(first_line '^test result:')
+    # No result line at all means Cargo stopped before any test binary reported,
+    # which says nothing about how many tests there are.
+    if [ "$total" != 0 ]; then printf 'zero_tests\tno\t-\n'
+    elif [ -n "$marker" ]; then printf 'zero_tests\tyes\t%s\n' "$marker"
+    else printf 'zero_tests\tunknown\tno test result line\n'; fi
+    list_failed '^test .* \.\.\. FAILED' "$LOG"
+    # A file under tests/unit or tests/integration compiles only when a `mod`
+    # declaration reaches it. A mod.rs is declared by its folder's name, and each
+    # main.rs is what Cargo itself finds.
+    _decl=$(find tests -name '*.rs' 2>/dev/null | tr '\n' '\0' \
+      | xargs -0 grep -hoE '(^|[[:blank:]])mod[[:blank:]]+[A-Za-z_][A-Za-z0-9_]*[[:blank:]]*;' 2>/dev/null \
+      | sed -E 's/.*mod[[:blank:]]+//; s/[[:blank:]]*;$//')
+    find tests/unit tests/integration -name '*.rs' 2>/dev/null | sort | while IFS= read -r _f; do
+      case "$_f" in tests/unit/main.rs|tests/integration/main.rs) continue ;; esac
+      _stem=${_f##*/}; _stem=${_stem%.rs}
+      if [ "$_stem" = mod ]; then _d=${_f%/mod.rs}; _stem=${_d##*/}; fi
+      printf '%s\n' "$_decl" | grep -qx "$_stem" || printf 'uncompiled\t%s\n' "$_f"
+    done
+    compile_err=$(first_line 'could not compile')
+    if [ "$nfail" -gt 0 ]; then set_rule bevy:test-failed "a test failed"
+    elif [ -n "$compile_err" ]; then
+      printf 'evidence\t%s\n' "$compile_err"
+      set_rule bevy:build-failed "the test build failed (a compile error), so no test ran"
+    elif [ "$CODE" = 126 ] || [ "$CODE" = 127 ]; then set_rule runner-unavailable "cargo did not start (command not found or not executable)"
+    elif [ "$CODE" != 0 ]; then
+      e=$(first_line '^error'); [ -n "$e" ] && printf 'evidence\t%s\n' "$e"
+      set_rule bevy:other "a non-zero exit with no failing test line: a test binary may have crashed, so the result is not known"
+    elif [ "$total" = 0 ]; then set_rule bevy:zero-tests "exit 0 over zero tests: no test was compiled or run"
+    else set_rule bevy:0 "exit 0: every test passed"; fi ;;
 esac
 if [ "$TIMED" = yes ]; then set_rule timeout "the run did not complete: timed out after ${TIMEOUT}s, so nothing was verified"; fi
 printf 'rule\t%s\t%s\n' "$RULE_ID" "$RULE_TXT"

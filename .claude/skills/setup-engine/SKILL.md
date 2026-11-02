@@ -3,7 +3,7 @@ name: setup-engine
 description: "Configure engine and version. Pins it in CLAUDE.md; WebSearch fills reference docs when the version is beyond LLM training data."
 argument-hint: "[engine] | [engine version] | refresh | upgrade [old-version] [new-version] | no args for guided selection"
 user-invocable: true
-allowed-tools: Read, Glob, Grep, Write, Edit, WebSearch, WebFetch, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/setup-engine/../../hooks/yaml-helper.sh" resolve_config *), Bash(godot --version), Bash(godot --headless --path . --import), Bash(command -v godot), Bash(uname -s), Bash(bash .claude/scripts/project-coherence.sh*)
+allowed-tools: Read, Glob, Grep, Write, Edit, WebSearch, WebFetch, Agent, AskUserQuestion, Bash(bash "*/.claude/skills/setup-engine/../../hooks/yaml-helper.sh" resolve_config *), Bash(godot --version), Bash(godot --headless --path . --import), Bash(command -v godot), Bash(uname -s), Bash(cargo --version), Bash(rustc --version), Bash(timeout 1800 cargo check), Bash(cargo update), Bash(bash .claude/scripts/project-coherence.sh*)
 model: sonnet
 ---
 
@@ -28,7 +28,7 @@ If the block did not render (shell preprocessing disabled), assume `minimal` (th
 
 Four modes:
 
-- **Full spec**: `/setup-engine godot 4.7` — engine and version provided
+- **Full spec**: `/setup-engine godot 4.7` or `/setup-engine bevy 0.20.0` — engine and version provided
 - **Engine only**: `/setup-engine unity` — engine provided, version will be looked up
 - **No args**: `/setup-engine` — fully guided mode (engine recommendation + version)
 - **Refresh**: `/setup-engine refresh` — update reference docs (see Section 10)
@@ -139,3 +139,21 @@ and use the subsection for the chosen language:
 - **A3** — engine specialist routing and file-extension tables
 
 **Load discipline.** On any engine other than Godot, **never load it** — nothing in Sections 4, 5 or 5.5 needs it, and reading it anyway spends the tokens the split exists to save. On Godot, read it once when you first reach Section 4 and keep using it for Sections 5 and 5.5; do not re-read it at each reference.
+
+---
+
+## Appendix B — Bevy Configuration
+
+Moved out of this file so it costs nothing on non-Bevy runs.
+
+**When the chosen engine is Bevy, read**
+`references/bevy-config.md`
+and use:
+
+- **B1** — CLAUDE.md Technology Stack template
+- **B2** — naming conventions
+- **B3** — engine specialist routing and file-extension tables
+- **B4** — the scaffold's `Cargo.toml`, `src/lib.rs` and `src/main.rs`
+- **B5** — how `commands.run` becomes a screenshot
+
+**Load discipline.** On any engine other than Bevy, **never load it** — nothing in Sections 4, 5, 5.5 or 7.5 needs it, and reading it anyway spends the tokens the split exists to save. On Bevy, read it once when you first reach Section 4 and keep using it for Sections 5, 5.5 and 7.5; do not re-read it at each reference.

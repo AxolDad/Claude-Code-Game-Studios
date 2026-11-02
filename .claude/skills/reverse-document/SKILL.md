@@ -30,11 +30,12 @@ appropriate design or architecture documentation. Use this when:
 - `architecture` → Generate an Architecture Decision Record (ADR)
 - `concept` → Generate a concept document from prototype
 
-**Path**: Directory or file to analyze, under the code root — `src/` Godot,
+**Path**: Directory or file to analyze, under the code root — `src/` Godot and Bevy,
 `Assets/` Unity, `Source/<Module>/` Unreal (`.claude/docs/code-root-resolution.md`)
 - `src/gameplay/combat/` → All combat-related code (Godot)
 - `Assets/Scripts/Core/EventSystem.cs` → Specific file (Unity)
 - `Source/MyGame/Private/AI/` → A module folder (Unreal)
+- `src/combat.rs` → A module file (Bevy)
 - `prototypes/stealth-mech/` → Prototype directory
 
 !`bash "${CLAUDE_SKILL_DIR}/../../hooks/yaml-helper.sh" resolve_config --keys workflow,system_overrides,automation`

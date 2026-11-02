@@ -1,17 +1,17 @@
 # Claude Code Game Studios -- Game Studio Agent Architecture
 
-Indie game development managed through 49 coordinated Claude Code subagents.
+Indie game development managed through 54 coordinated Claude Code subagents.
 Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 ## Technology Stack
 
-- **Engine**: [CHOOSE: Godot 4 / Unity / Unreal Engine 5]
-- **Language**: [CHOOSE: GDScript / C# / C++ / Blueprint]
+- **Engine**: [CHOOSE: Godot 4 / Unity / Unreal Engine 5 / Bevy]
+- **Language**: [CHOOSE: GDScript / C# / C++ / Blueprint / Rust]
 - **Version Control**: Git with trunk-based development
 - **Build System**: [SPECIFY after choosing engine]
 - **Asset Pipeline**: [SPECIFY after choosing engine]
 
-> **Note**: Engine-specialist agents exist for Godot, Unity, and Unreal with
+> **Note**: Engine-specialist agents exist for Godot, Unity, Unreal, and Bevy with
 > dedicated sub-specialists. Use the set matching your engine.
 
 ## Project Structure
@@ -22,7 +22,7 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 <!-- ENGINE-REFERENCE-IMPORT: the line below is engine-specific. /setup-engine
      rewrites it to @docs/engine-reference/<engine>/VERSION.md for the chosen
-     engine, so a Unity or Unreal project stops loading the Godot reference every
+     engine, so a Unity, Unreal or Bevy project stops loading the Godot reference every
      session. It defaults to Godot (the template's example engine); skills that
      need the pinned version read docs/engine-reference/<engine>/VERSION.md on
      demand regardless of this import. -->

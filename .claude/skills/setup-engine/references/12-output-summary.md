@@ -11,16 +11,19 @@ After setup is complete, output:
 Engine Setup Complete
 =====================
 Engine:          [name] [version]
-Language:        [GDScript | C# | GDScript + C# | C# | C++ + Blueprint | Blueprint + C++]
+Language:        [GDScript | C# | GDScript + C# | C# | C++ + Blueprint | Blueprint + C++ | Rust]
 Knowledge Risk:  [LOW/MEDIUM/HIGH]
 Reference Docs:  [created/skipped]
 CLAUDE.md:       [updated]
 Tech Prefs:      [created/updated]
 project.yaml:    [created/updated]
 Agent Config:    [verified]
+[Bevy] Toolchain: [Section 3's result: rustc and cargo against the minimum, or NOT DETERMINED]
+[Bevy] Scaffold:  [created: <files> | already present: <files> | Cargo.toml NOT VERIFIED — <reason>]
 
 Next Steps:
 1. Review docs/engine-reference/<engine>/VERSION.md
+[Bevy] Then run /test-setup, which creates the test crates cargo test compiles
 ```
 
 Then print **one** Next-Steps list, matching the resolved `workflow` tier:

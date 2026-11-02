@@ -11,7 +11,8 @@ For each module defined in Phase 1, define ownership:
 - **Exposes**: what other modules may read or call
 - **Consumes**: what it reads from other modules
 - **Engine APIs used**: which specific engine classes/nodes/signals this module
-  calls directly (with version and risk level noted)
+  calls directly (with version and risk level noted; on Bevy, the types, system
+  parameters and schedules it uses)
 
 Format as a table per layer, then as an ASCII dependency diagram.
 

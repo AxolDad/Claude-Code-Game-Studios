@@ -14,7 +14,9 @@ It creates `tests/README.md`, `tests/smoke/critical-paths.md`,
 root: for Godot `tests/unit/` and `tests/integration/` (placeholder files, and
 no runner script — gdUnit4's `addons/gdUnit4/bin/GdUnitCmdTool.gd` is the
 runner); for Unity `Assets/Tests/EditMode/` and `Assets/Tests/PlayMode/` with
-their `.asmdef` files; for Unreal `Source/<Module>/Private/Tests/`. When the
+their `.asmdef` files; for Unreal `Source/<Module>/Private/Tests/`; for Bevy,
+`test-scaffold.sh bevy` writes all of it, with `tests/unit/main.rs` and
+`tests/integration/main.rs` as the test root. When the
 infrastructure already exists it exits early unless `force` is passed, and
 `force` only creates missing files — it never overwrites. No director gates
 apply. The verdict is COMPLETE when the scaffold is in place.
@@ -179,11 +181,39 @@ Fixture defaults.
 
 ---
 
+### Case 6: Bevy — the script scaffolds, and its NEEDS rows are relayed
+
+**Fixture:**
+- `project.yaml` has `engine.name: Bevy`
+- `Cargo.toml` exists; `src/lib.rs` does not
+- No `tests/` and no `.github/workflows/`; the user approves the plan
+
+**Input:** `/test-setup`
+
+**Expected behavior:**
+1. Phase 2 runs `bash .claude/scripts/test-scaffold.sh bevy --dry-run` and builds the plan
+   from its `WOULD_CREATE` rows, relaying `NEEDS library_crate src/lib.rs`
+2. After approval, Phase 3 runs `bash .claude/scripts/test-scaffold.sh bevy` and writes
+   none of its files by hand
+3. Phases 4 and 5 say the script handled them; the workflow's `Check Tests Ran` step is named
+4. The summary explains the `mod [system];` rule and the silent failure without it
+5. `NEEDS` is still open, so the verdict is INCOMPLETE and `/setup-engine` is the next step
+
+**Assertions:**
+- [ ] The plan comes from the script's rows, not from the Godot template
+- [ ] Every `CREATED`, `EXISTS`, `SKIPPED`, `FAILED` and `NEEDS` row is relayed
+- [ ] `tests/unit/main.rs` and `tests/integration/main.rs` are named as the test root
+- [ ] A `NEEDS` or `FAILED` row is never reported as COMPLETE
+- [ ] A script that printed nothing is `NOT CREATED — test-scaffold.sh did not run`, not success
+- [ ] No file is overwritten
+
+---
+
 ## Protocol Compliance
 
 - [ ] Reads the engine (`project.yaml`, then `technical-preferences.md`) before generating any scaffold
 - [ ] Generates engine-appropriate test runner config and CI workflow (not generic)
-- [ ] Puts unit and integration tests in the engine's test root (`tests/` for Godot, `Assets/Tests/` for Unity, `Source/<Module>/Private/Tests/` for Unreal)
+- [ ] Puts unit and integration tests in the engine's test root (`tests/` for Godot, `Assets/Tests/` for Unity, `Source/<Module>/Private/Tests/` for Unreal, `tests/unit/main.rs` and `tests/integration/main.rs` for Bevy)
 - [ ] Creates `production/qa/evidence/` — the path the Phase 6 summary reports
 - [ ] Asks approval before creating files
 - [ ] Exits early when infrastructure exists; `force` creates only missing files and never overwrites
@@ -195,6 +225,8 @@ Fixture defaults.
 
 - Unreal Engine test scaffolding (`Source/<Module>/Private/Tests/README.md`, a
   self-hosted Windows CI runner) is not separately fixture-tested.
+- A Bevy run with every file present and no `NEEDS` row (COMPLETE) follows Case 6;
+  the files themselves are the script's, tested with it.
 - The `force` path on a partial scaffold (create only the missing files) is
   covered by protocol compliance, not by its own case.
 - The case where tests/ exists but is from a different engine (e.g., Unity tests

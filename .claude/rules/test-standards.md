@@ -22,6 +22,10 @@ paths:
     that filter in `commands.test` uses: the project name, or the distinct root
     `/setup-engine` chose when the project's name is also an engine area
     (`Audio`, `Core`, `Input`, …) — name tests under whichever it is
+  - **Bevy (`cargo test`):** file `[system].rs`, function `[scenario]_[expected]`
+    — `combat.rs` → `base_attack_returns_expected_damage()`. Declare the file with
+    `mod [system];` in `tests/unit/main.rs` or `tests/integration/main.rs`: a file
+    no `mod` reaches is not compiled, and `cargo test` still exits 0
 - Every test must have a clear arrange/act/assert structure
 - Unit tests must not depend on external state (filesystem, network, database)
 - Integration tests must clean up after themselves
@@ -107,6 +111,24 @@ bool FHealthTakeDamageTest::RunTest(const FString& Parameters)
 }
 
 #endif
+```
+
+Bevy, `cargo test` (`tests/unit/health.rs`, with `mod health;` in `tests/unit/main.rs`):
+
+```rust
+use <crate>::health::Health;
+
+#[test]
+fn take_damage_reduces_health() {
+    // Arrange
+    let mut health = Health::new(100);
+
+    // Act
+    health.take_damage(25);
+
+    // Assert
+    assert_eq!(health.current(), 75);
+}
 ```
 
 **Incorrect**:

@@ -1,6 +1,7 @@
 ---
 paths:
   - "assets/data/**/*.json"
+  - "assets/data/**/*.{ron,toml}"
   - "Assets/**/{Data,data}/**/*.json"
   - "Content/**/{Data,data}/**/*.json"
 ---
@@ -27,6 +28,9 @@ paths:
 - No orphaned data entries — every entry must be referenced by code or another data file
 - Version data files when making breaking schema changes
 - Include sensible defaults for all optional fields
+- On Bevy, RON and TOML data under `assets/data/` follow the same naming, schema
+  and versioning rules. The hooks validate JSON only, so a broken `.ron` or `.toml`
+  is not flagged: load it in a test
 
 ## Examples
 

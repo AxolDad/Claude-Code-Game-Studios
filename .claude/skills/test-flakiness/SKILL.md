@@ -67,6 +67,10 @@ For Unreal projects: automation logs go to `Saved/Logs/`. Grep for
 `Test Completed. Result={<status>}`
 (`docs/engine-reference/unreal/current-best-practices.md`, "Command Line").
 
+For Bevy projects: `cargo test` writes no result file, so there is a history only
+if each run's output was kept. Create `test-results/`, then keep it there with
+`bash .claude/scripts/test-run.sh bevy --log test-results/run-1.log`, one file per run.
+
 ### Option B — Local log files
 
 If a path argument is provided, read that file directly.
@@ -100,6 +104,13 @@ reads):
 - Its `result` attribute is `Passed`, `Failed`, `Inconclusive` or `Skipped`
   (`docs/engine-reference/unity/current-best-practices.md`, "Command Line");
   only `Passed` and `Failed` enter the history
+
+**`cargo test` output** (Bevy):
+- Grep for `^test .* \.\.\. (ok|FAILED|ignored)`; the text between `test ` and
+  ` ... ` is the identifier
+- Only `ok` and `FAILED` enter the history; `ignored` is a skip
+- `.claude/scripts/flaky-stats.sh --format cargo` parses the same lines, for a user
+  who wants the table from a shell; this skill reads them with Grep
 
 **Plain text logs**:
 - Grep for pass/fail patterns:
@@ -169,6 +180,8 @@ Skip mechanisms, by engine — name only the one for the project's engine:
 - **Unreal**: **NOT SOURCEABLE** — `docs/engine-reference/unreal/` documents no way
   to skip an automation test. Log it in the quarantine section and ask the user
   how their CI excludes a test; do not invent a flag.
+- **Bevy (Rust)**: `#[ignore = "flaky: [cause]"]` on the test function; `cargo test`
+  then prints `ignored, flaky: [cause]`
 
 **Investigate and fix soon (Moderate):**
 > "This test is intermittently unreliable. Root cause appears to be [cause].

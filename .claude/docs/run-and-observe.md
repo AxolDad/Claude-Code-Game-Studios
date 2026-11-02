@@ -36,7 +36,8 @@ engine has a native way.
 5. **Retain.** Capture straight into the story's evidence folder, so nothing
    needs copying: `mkdir -p production/qa/evidence/[story-slug]`, then pass
    `production/qa/evidence/[story-slug]/[NN]-[what-it-shows].png` as the capture
-   path (Godot adds its frame number to the name). `[story-slug]` is the story
+   path (Godot adds its frame number to the name; Bevy cannot be given a path, so
+   move its file there). `[story-slug]` is the story
    file's name without `.md`: `story-003-light-pickup` for
    `production/epics/core/story-003-light-pickup.md`. Reference the image from
    the evidence doc. A screenshot that was taken and discarded is an
@@ -53,6 +54,7 @@ engine has a native way.
 | Godot 4 | `godot --path . --windowed --resolution 1280x720 <scene>.tscn` | `--write-movie <path>.png --quit-after <N>` | beside the given path, `<name>00000000.png` … | `--headless` | **none** |
 | Unity 6 | built player `.exe -screen-width 1280 -screen-height 720 -screen-fullscreen 0 --scene <Name>` | `ScreenCapture.CaptureScreenshot(<abs path>)` from a bootstrap script | the absolute path you pass | `-batchmode`, `-nographics` | one MonoBehaviour |
 | Unreal 5 | `MSYS_NO_PATHCONV=1 "<UE root>/Engine/Binaries/Win64/UnrealEditor.exe" "$(pwd -W 2>/dev/null || pwd)/<Game>.uproject" <MapURL> -game -windowed -ResX=1280 -ResY=720` | `HighResShot 1280x720 filename=<abs path>` console command | the path you pass (else `Saved/Screenshots/WindowsEditor/`) | `-nullrhi`, `-unattended` alone | one actor or `-ExecCmds` |
+| Bevy 0.20 | `cargo run --features bevy/bevy_ci_testing` (default window: 1280x720) | `CI_TESTING_CONFIG=<file>.ron` with `(events: [(<N>, ScreenshotAndExit)])` | `./screenshot-<N>.png` in the working directory, then `mv` | `MinimalPlugins`, which has no window | one RON file |
 
 ### Godot 4 — zero scaffold
 
@@ -176,6 +178,58 @@ no delay, so let `timeout` end the launch (exit 124 is expected) and check the
 file exists; a dev actor can instead wait a second, then `quit`. The Blueprint node `Take High Res Screenshot` is editor-only and
 does not work in a `-game` launch.
 
+### Bevy 0.20 — one RON file, then move the image
+
+The `bevy_ci_testing` Cargo feature adds a plugin that reads a RON file named by
+the `CI_TESTING_CONFIG` environment variable. With `(60, ScreenshotAndExit)` it saves
+a screenshot at frame 60 and exits once that file is saved:
+
+```
+# production/qa/evidence/shop-panel/capture.ron
+(events: [(60, ScreenshotAndExit)])
+```
+```
+rm -f screenshot-60.png
+CI_TESTING_CONFIG=production/qa/evidence/shop-panel/capture.ron timeout 1800 cargo run --features bevy/bevy_ci_testing
+mv screenshot-60.png production/qa/evidence/shop-panel/01-shop-open.png
+```
+
+**The file name is fixed:** `./screenshot-<frame>.png` in the working directory, so
+it cannot go straight to the evidence folder. Run from the project root and move it
+to `production/qa/evidence/[story-slug]/[NN]-[what-it-shows].png`. The feature goes
+on the command line only: Bevy's source recommends it just for testing, and it changes
+some render limits. A project with more than one binary adds `--bin <name>`.
+
+**Exit 0 is not evidence. Check that the PNG exists.**
+
+- **Use `ScreenshotAndExit`, and never pair a screenshot event with a fixed
+  `AppExit`.** `(60, NamedScreenshot("x")), (90, AppExit)` was run: it exits 0 and
+  logs "Took a screenshot", and no file is written, because the app exits before
+  the capture is saved (those 30 frames passed in about 25 ms). `ScreenshotAndExit`
+  waits for the save.
+- A save that fails is only logged, so that run exits 0 with no file as well.
+- **A config file Bevy cannot read is silently treated as empty:** no screenshot and
+  no exit, so the game runs until `timeout` ends it with 124. That is
+  `NOT VERIFIED — CI_TESTING_CONFIG not read`. A file with a RON error panics.
+- **The game needs a camera for anything to be drawn.** With none, the PNG is real
+  and shows only the clear colour. Step 4's look catches this.
+- `timeout 1800` covers the build too: turning the feature on recompiles.
+
+**It needs a GPU and a window. With no GPU** Bevy panics at startup with `Unable to
+find a GPU! Make sure you have installed required drivers!`, **and with no display**
+with `Failed to build event loop`. Either way, report `Run result: NOT VERIFIED —
+<that message>`. `xvfb-run` supplies a display, not a GPU, so it does not fix the
+first. Run this on a machine with both.
+
+**Reaching the state:** Bevy has no launch argument for a scene. The game reads its
+own, with `std::env::args`, and Cargo passes it after `--`: `cargo run --features
+bevy/bevy_ci_testing -- --scene shop`.
+
+Capture-on-trigger alternative, for a state a launch cannot reach or a path you want
+written directly: `commands.spawn(Screenshot::primary_window()).observe(save_to_disk(path));`
+from `bevy::render::view::screenshot`, in a system that runs on the wanted condition.
+Do not exit on a fixed frame afterwards, for the reason above.
+
 ### Any engine — OS capture fallback
 
 On Windows, PowerShell with `System.Drawing` can `CopyFromScreen` into a bitmap
@@ -221,22 +275,27 @@ Say which half the screenshot covered.
 ## Reaching the state
 
 A screenshot of the title screen verifies nothing about depth 2. Either launch
-the scene/map directly (Godot scene arg, Unreal map URL, Unity `--scene`) or
+the scene/map directly (Godot scene arg, Unreal map URL, Unity `--scene`, a
+`-- --scene` the Bevy game reads itself) or
 give the bootstrap a debug argument that sets state (`--gold=500 --depth=2`).
 Write stories so their surface is reachable one of those ways; a story that is
 not is a story that will be marked `NOT VERIFIED` every time.
 
 ## Finding the engine
 
-None of the three engines installs onto `PATH` on Windows. `engine.path` in
+None of Godot, Unity and Unreal installs onto `PATH` on Windows. `engine.path` in
 `project.yaml` is where the editor lives; resolve it before concluding "no
-engine on this machine". Absence of a path is not absence of an engine.
+engine on this machine". Absence of a path is not absence of an engine. Bevy has
+no editor and no `engine.path`: it is a crate that `cargo` builds, so the question
+is whether `cargo --version` runs.
 
 ---
 
 *Commands above were run on Windows with Godot 4.6.1 (gdUnit4 6.1.3) and the
 Godot ones again on 4.7.2 (gdUnit4 6.2.2), Unity
 6000.3.23f1 and Unreal Engine 5.7; the Unreal Linux and macOS notes come from
-Epic's documentation. `docs/engine-reference/<engine>/` is
+Epic's documentation. The Bevy capture and its `NamedScreenshot` trap were run on
+Bevy 0.20.1, on a project with no camera; its no-GPU, no-display and unreadable-config
+behaviour is read from the 0.20.1 source, not run. `docs/engine-reference/<engine>/` is
 the project's pinned authority; check it before trusting a version-qualified
 claim here.*

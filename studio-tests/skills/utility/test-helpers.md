@@ -226,6 +226,7 @@ Fixture defaults.
 
 - `all` mode (one factory per system with test files) follows Case 1 per system;
   not separately tested.
+- Bevy helper generation is not tested here.
 - Unreal helper generation (`Source/<Module>/Private/Tests/Helpers/`) follows
   Case 6's pattern for its own helper root; not separately tested. Nor is a
   Unity project whose PlayMode tests need the helpers too (the skill asks before

@@ -24,11 +24,18 @@ Before running anything, understand the environment:
    that `tests/` does. Check the engine's **test root** (from step 3; the table
    is in `.claude/docs/directory-structure.md` — Godot `tests/unit/` and
    `tests/integration/`, Unity `Assets/Tests/`, Unreal
-   `Source/*/Private/Tests/`) and `tests/smoke/` for actual test files. A
+   `Source/*/Private/Tests/`, Bevy `tests/unit/`, `tests/integration/` and
+   `#[cfg(test)]` modules in `src/`) and `tests/smoke/` for actual test files. A
    **test file** is one the engine's test runner executes — a `*_test.gd` suite,
-   a C# test class, an Unreal automation test source. Markdown checklists do not
+   a C# test class, an Unreal automation test source, a Rust file with a `#[test]`
+   function. Markdown checklists do not
    count: `/test-setup` always writes `tests/smoke/critical-paths.md`, and
    counting it would hide exactly the zero-test state this step exists to catch.
+   **On Bevy, the two examples `/test-setup` writes do not count either:**
+   `system_runs_once_per_update` and `only_poisoned_entities_lose_health` test their
+   own local types, so they pass whatever the game does. Grep `tests/` and `src/`
+   for `#[test]` with one line of context; if those two are the only functions, no
+   game tests exist.
    If none are found **at `qa.level: minimal`**, tests are waived at this level:
    record the automated row as `WAIVED — qa.level: minimal, no game tests`, skip
    the test run in Phase 2 and all of Phase 3 (say so in one line each), run
@@ -65,7 +72,7 @@ Before running anything, understand the environment:
    (a `[TO BE CONFIGURED]` value means not configured). Store this for test
    command selection in Phase 2.
 
-   Then find the **editor executable** — none of the three engines installs
+   Then find the **editor executable** — none of Godot, Unity and Unreal installs
    onto `PATH` by default on Windows or macOS, so a bare `godot` that does not
    resolve says nothing about whether the engine is installed. Take the first
    that resolves (the file exists, or `command -v` finds it): the executable
@@ -77,6 +84,10 @@ Before running anything, understand the environment:
    space; on Unreal, `<UE root>` is `engine.path`. If none resolves, the test
    runner is not available (Phase 2) — on Godot,
    `NOT ASSESSED — Godot executable not found (commands.test, engine.path, PATH)`.
+
+   **Bevy has no editor to find.** The executable is `cargo`, and `engine.path` does
+   not apply: report `Editor: cargo` or, when `command -v cargo` finds nothing,
+   `Editor: cargo not found`. `test-run.sh bevy` in Phase 2 reports that case itself.
 
 4. **Smoke test list**: check whether `production/qa/smoke-tests.md` or
    `tests/smoke/` exists. If a smoke test list is found, load it for use in

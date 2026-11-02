@@ -11,7 +11,8 @@ then resolves the editor executable — the one `commands.test` names, else
 Phase 2 runs `commands.test` (or the per-engine default) under a timeout and
 reads the result by engine — gdUnit4 exit codes for Godot; on Unity, Play Mode
 tests under `Assets/Tests/PlayMode/` get a second run with their own results
-file. At `qa.level: minimal` with no game tests, the automated row is WAIVED
+file; on Bevy, `test-run.sh bevy` does the run and its `rule` and `uncompiled` rows
+are read. At `qa.level: minimal` with no game tests, the automated row is WAIVED
 and Phase 2 runs a build check instead — `commands.smoke`, else
 `commands.build`, when set. Phase 3 scans test coverage against the QA plan or
 sprint stories; Phase 4 batch-verifies manual smoke checks with
@@ -429,6 +430,43 @@ Fixture defaults.
 
 ---
 
+### Case 13: Bevy Lookalikes — exit 0 is not always a pass
+
+**Fixture:**
+- `engine.name: Bevy`, `qa.level: standard`, `commands.test` as `/setup-engine` writes it
+- Runs A to D have a `#[test]` of the game's own under `tests/`, reached or not as stated
+- `.claude/scripts/test-run.sh` reports as stated
+
+**Input:** `/smoke-check`, once per run:
+
+**Run A — zero tests:** `rule bevy:zero-tests`, `zero_tests yes`.
+**Run B — a test file not compiled:** `rule bevy:0`, `tests total=4 passed=4 failed=0`,
+and `uncompiled tests/unit/combat.rs`.
+**Run C — a compile error:** `rule bevy:build-failed`, with an `evidence` line and a `pre_log`.
+**Run D — all pass:** `rule bevy:0`, `tests total=6 passed=6 failed=0`, no `uncompiled` row.
+**Run E — scaffold only:** the only `#[test]` functions are `system_runs_once_per_update`
+and `only_poisoned_entities_lose_health`.
+
+**Expected behavior:**
+1. Every run that reaches Phase 2 uses `bash .claude/scripts/test-run.sh bevy --log
+   test-results/cargo-test.log`, with no hand-run `cargo`
+2. Run A: `NOT ASSESSED — no tests found`
+3. Run B: `NOT ASSESSED — 1 test files not compiled`, naming the file and `mod combat;`;
+   a story matched only by that file is MISSING in Phase 3
+4. Run C: FAIL, quoting `evidence`
+5. Run D: PASS for the automated row
+6. Run E: Phase 1 finds no game tests, so `NOT ASSESSED` here, and WAIVED with the
+   `cargo check` build check at `qa.level: minimal`
+
+**Assertions:**
+- [ ] Exit 0 over zero tests is never a pass
+- [ ] An `uncompiled` row keeps `bevy:0` from reading as a pass
+- [ ] A compile error is FAIL, not NOT ASSESSED
+- [ ] The two scaffold examples do not count as game tests
+- [ ] The report's command row is the one `test-run.sh` printed
+
+---
+
 ## Protocol Compliance
 
 - [ ] Uses `AskUserQuestion` for all manual smoke check batches (Batch 1, Batch 2, Batch 3), and Batch 1 asks whether the build was launched this session; "not launched" yields NOT ASSESSED
@@ -440,7 +478,7 @@ Fixture defaults.
 - [ ] FAIL is triggered by automated test failures, a suite that did not complete (timeout, compile/parse/build error, no results file), or Batch 1/Batch 2 FAIL responses
 - [ ] PASS WITH WARNINGS is triggered by MISSING test coverage, a runner warning on a passing suite (gdUnit4 101), or a confirmed NOT RUN — with no critical failures
 - [ ] Unconfirmed NOT RUN (runner not available) yields NOT ASSESSED — never FAIL, never a pass verdict
-- [ ] A run over zero tests, a runner that could not run, and an unconfirmed `PlayMode: NOT RUN` yield NOT ASSESSED
+- [ ] A run over zero tests, a runner that could not run, an unconfirmed `PlayMode: NOT RUN`, and a Bevy `uncompiled` row yield NOT ASSESSED
 - [ ] Does not invoke director gates at any point
 
 ---
@@ -464,3 +502,6 @@ Fixture defaults.
   is set — asserted in the skill, not given a case here.
 - A Play Mode run that cannot be made (`PlayMode: NOT RUN`, unconfirmed →
   NOT ASSESSED) is covered by protocol compliance, not by its own case.
+- Bevy's `bevy:test-failed`, `bevy:other`, `bevy:no-manifest`, `timeout`,
+  `runner-unavailable` and `precheck src/lib.rs absent` follow Case 13 and the table in
+  `references/2-run-tests.md`; not separately fixture-tested.

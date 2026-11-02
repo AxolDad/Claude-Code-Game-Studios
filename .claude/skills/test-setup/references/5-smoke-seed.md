@@ -5,7 +5,8 @@
 
 ## Phase 5: Create Smoke Test Seed
 
-Create `tests/smoke/critical-paths.md`:
+On Bevy, `test-scaffold.sh bevy` handled this file in Phase 3: say so in one line and
+go on. On every other engine, create `tests/smoke/critical-paths.md`:
 
 ```markdown
 # Smoke Test: Critical Paths

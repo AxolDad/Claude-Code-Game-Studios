@@ -199,4 +199,6 @@ Fixture defaults.
   `Test Completed. Result={<status>}`), and its skip
   mechanism is NOT SOURCEABLE, so a quarantined Unreal test is logged and the
   user is asked how their CI excludes it. The same applies to gdUnit4 C# tests.
+- Bevy is not tested here: saved `cargo test` output is read by `flaky-stats.sh`'s
+  `cargo` format, from `test <id> ... ok`, `FAILED` and `ignored` lines.
 - The Low tier (1–5%) needs 20 or more runs to reach and is not tested.

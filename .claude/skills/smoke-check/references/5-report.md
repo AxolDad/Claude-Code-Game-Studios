@@ -32,6 +32,8 @@ not run]) | NOT RUN ([reason]) | WAIVED (qa.level: minimal — no game tests)]
 
 [Unity: one Status line per test platform — `EditMode:` and `PlayMode:`.]
 
+[Bevy: one line per `uncompiled` row — `Not compiled: [path] — add mod [stem]; to main.rs`.]
+
 [WAIVED only:] **Build check**: [PASS — `[command]` exit 0 | FAIL — [reason] |
 NOT RUN — [commands.smoke and commands.build unset | executable not found]]
 
@@ -117,7 +119,10 @@ Any platform with one or more FAIL checks contributes to the overall FAIL verdic
 - The automated suite is **unconfirmed NOT RUN** — nobody has reported a result
 - The runner could not run (gdUnit4 103 or 104, gdUnit4 or the Unity Test
   Framework not installed), or it ran and executed zero tests
-  (`No test cases found`, `testcasecount="0"`, `No automation tests matched`)
+  (`No test cases found`, `testcasecount="0"`, `No automation tests matched`,
+  Bevy's `bevy:zero-tests`)
+- Bevy reports `bevy:no-manifest`, or any `uncompiled` row: those test files did
+  not run, so a passing suite does not cover them
 - Unity Play Mode tests exist and are `PlayMode: NOT RUN`, unconfirmed — the
   Edit Mode result does not cover them
 - A Batch 1 or Batch 2 check could not be executed (no build, engine not
@@ -136,8 +141,8 @@ Any platform with one or more FAIL checks contributes to the overall FAIL verdic
   NOT RUN **and the developer has confirmed the result from their local IDE or CI**
 - All Batch 1 and Batch 2 smoke checks PASS
 - At least one warning: a Logic/Integration story with MISSING test evidence,
-  a runner warning on a passing suite (gdUnit4 101 — orphan nodes leaked), or
-  a NOT RUN suite the developer confirmed
+  a runner warning on a passing suite (gdUnit4 101 — orphan nodes leaked, or Bevy's
+  `precheck src/lib.rs absent`), or a NOT RUN suite the developer confirmed
 
 **PASS** if ALL of:
 - Automated tests PASS, or WAIVED (`qa.level: minimal` and no game tests exist —

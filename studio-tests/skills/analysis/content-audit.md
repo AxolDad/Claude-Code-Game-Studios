@@ -299,5 +299,7 @@ Fixture defaults.
   other content types under `Assets/` (asserted in Protocol Compliance); Unreal
   levels under `Content/` (`*.umap`, with data assets as `*.uasset`); neither
   engine has its own case.
+- Bevy has no scene file extension, so `content-count.sh found --engine bevy`
+  prints levels as `not_counted`; it has no case here either.
 - Asset naming, size and format compliance is `/asset-audit`'s job, not this
   skill's.
