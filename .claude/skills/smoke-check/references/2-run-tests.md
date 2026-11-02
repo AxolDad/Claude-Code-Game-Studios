@@ -234,7 +234,9 @@ output is a FAIL, and so is `Can't run project: no main scene defined` — the
 game cannot launch; Unity `smoke` exits 1 on a compile error; Bevy `smoke`
 (`cargo check`) exits 101 on one, with `error[E…` lines, and takes `timeout 1800`
 because its first run compiles all of Bevy; any other
-non-zero exit is a FAIL. Record `Build check: PASS — [command] exit 0`,
+non-zero exit is a FAIL. On Bevy, follow it with `timeout 1800 cargo check --tests`,
+read the same way: `cargo check` does not compile test code, so a broken test
+passes it. Record `Build check: PASS — [command] exit 0`,
 `FAIL — [reason]`, or `NOT RUN — [commands.smoke and commands.build unset |
 executable not found]`. A build check that did not run is named in the report
 and leaves the launch in Batch 1 to carry the verdict; it never passes on its

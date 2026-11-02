@@ -197,13 +197,15 @@ Fixture defaults.
    none of its files by hand
 3. Phases 4 and 5 say the script handled them; the workflow's `Check Tests Ran` step is named
 4. The summary explains the `mod [system];` rule and the silent failure without it
-5. `NEEDS` is still open, so the verdict is INCOMPLETE and `/setup-engine` is the next step
+5. `NEEDS` is still open, so `cargo check --tests` does not run, the summary says `Tests NOT
+   COMPILED`, the verdict is INCOMPLETE and `/setup-engine` is the next step
 
 **Assertions:**
 - [ ] The plan comes from the script's rows, not from the Godot template
 - [ ] Every `CREATED`, `EXISTS`, `SKIPPED`, `FAILED` and `NEEDS` row is relayed
 - [ ] `tests/unit/main.rs` and `tests/integration/main.rs` are named as the test root
 - [ ] A `NEEDS` or `FAILED` row is never reported as COMPLETE
+- [ ] COMPLETE on Bevy requires `cargo check --tests` exit 0; a failure, a timeout or a missing `cargo` is INCOMPLETE
 - [ ] A script that printed nothing is `NOT CREATED — test-scaffold.sh did not run`, not success
 - [ ] No file is overwritten
 
@@ -225,7 +227,8 @@ Fixture defaults.
 
 - Unreal Engine test scaffolding (`Source/<Module>/Private/Tests/README.md`, a
   self-hosted Windows CI runner) is not separately fixture-tested.
-- A Bevy run with every file present and no `NEEDS` row (COMPLETE) follows Case 6;
+- A Bevy run with every file present, no `NEEDS` row and `cargo check --tests` exit 0
+  (COMPLETE) follows Case 6;
   the files themselves are the script's, tested with it.
 - The `force` path on a partial scaffold (create only the missing files) is
   covered by protocol compliance, not by its own case.

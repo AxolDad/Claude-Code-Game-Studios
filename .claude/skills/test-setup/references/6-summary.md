@@ -47,6 +47,13 @@ Run /test-setup and write one example test before advancing.
 Verdict: **COMPLETE** — test framework scaffolded and CI/CD wired up.
 ```
 
+On Bevy, compile what was scaffolded before giving the verdict: `timeout 1800 cargo
+check --tests`. `cargo check` alone does not compile test code. Exit 0 adds `Tests
+compile: cargo check --tests exit 0` to the block. A non-zero exit is INCOMPLETE, quoting the
+first `error` line. A timeout or a missing `cargo` is also INCOMPLETE, as `Tests NOT
+COMPILED — [reason]`: nothing has shown the scaffold builds. With a `NEEDS` row open,
+print `Tests NOT COMPILED — [the NEEDS row]` and do not run it.
+
 On Bevy, a `FAILED` row, a `NEEDS` row or a script that printed nothing is not
 COMPLETE. List the rows in place of the block's file list and end with
 `Verdict: **INCOMPLETE** — [the rows]`, and for `NEEDS` name `/setup-engine` as the

@@ -495,14 +495,14 @@ case "$ENGINE" in
     elif [ -n "$marker" ]; then printf 'zero_tests\tyes\t%s\n' "$marker"
     else printf 'zero_tests\tunknown\tno test result line\n'; fi
     list_failed '^test .* \.\.\. FAILED' "$LOG"
-    # A file under tests/unit or tests/integration compiles only when a `mod`
-    # declaration reaches it. A mod.rs is declared by its folder's name, and each
-    # main.rs is what Cargo itself finds.
+    # A file in any folder under tests/ compiles only when a `mod` declaration
+    # reaches it. A mod.rs is declared by its folder's name, and tests/<dir>/main.rs
+    # is what Cargo itself finds.
     _decl=$(find tests -name '*.rs' 2>/dev/null | tr '\n' '\0' \
       | xargs -0 grep -hoE '(^|[[:blank:]])mod[[:blank:]]+[A-Za-z_][A-Za-z0-9_]*[[:blank:]]*;' 2>/dev/null \
       | sed -E 's/.*mod[[:blank:]]+//; s/[[:blank:]]*;$//')
-    find tests/unit tests/integration -name '*.rs' 2>/dev/null | sort | while IFS= read -r _f; do
-      case "$_f" in tests/unit/main.rs|tests/integration/main.rs) continue ;; esac
+    find tests -mindepth 2 -name '*.rs' 2>/dev/null | sort | while IFS= read -r _f; do
+      case "$_f" in tests/*/*/main.rs) ;; tests/*/main.rs) continue ;; esac
       _stem=${_f##*/}; _stem=${_stem%.rs}
       if [ "$_stem" = mod ]; then _d=${_f%/mod.rs}; _stem=${_d##*/}; fi
       printf '%s\n' "$_decl" | grep -qx "$_stem" || printf 'uncompiled\t%s\n' "$_f"

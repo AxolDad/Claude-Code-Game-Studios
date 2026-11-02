@@ -64,6 +64,46 @@ it wants. `bevy_feathers` is not in `default`. `dev` is `debug`, `bevy_dev_tools
 `render_dev_tools` and `file_watcher`. `cargo run --features bevy/dynamic_linking`
 speeds up iteration and is not for shipping.
 
+## First Visible Frame
+
+Nothing is drawn without a camera. Both forms below were run and captured on 0.20.1:
+a sprite in 2D, and a mesh that also needs a light in 3D.
+
+```rust
+use bevy::prelude::*;
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_systems(Startup, setup_2d) // or setup_3d
+        .run();
+}
+
+fn setup_2d(mut commands: Commands) {
+    commands.spawn(Camera2d);
+    commands.spawn(Sprite::from_color(Color::srgb(0.9, 0.8, 0.2), Vec2::splat(200.0)));
+}
+
+fn setup_3d(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(2.0, 2.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+    commands.spawn((
+        DirectionalLight::default(),
+        Transform::from_xyz(3.0, 5.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+    commands.spawn((
+        Mesh3d(meshes.add(Cuboid::default())),
+        MeshMaterial3d(materials.add(Color::srgb(0.9, 0.8, 0.2))),
+    ));
+}
+```
+
 ## Testing
 
 `App::new()` with no plugins is enough to run systems. `app.update()` runs one frame,

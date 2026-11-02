@@ -456,7 +456,7 @@ and `only_poisoned_entities_lose_health`.
 4. Run C: FAIL, quoting `evidence`
 5. Run D: PASS for the automated row
 6. Run E: Phase 1 finds no game tests, so `NOT ASSESSED` here, and WAIVED with the
-   `cargo check` build check at `qa.level: minimal`
+   `cargo check` and `cargo check --tests` build check at `qa.level: minimal`
 
 **Assertions:**
 - [ ] Exit 0 over zero tests is never a pass
