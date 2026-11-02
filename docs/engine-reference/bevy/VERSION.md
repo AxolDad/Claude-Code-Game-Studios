@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Engine Version** | Bevy 0.20.0 |
-| **Installed at pin time** | NOT DETERMINED — `/setup-engine` §3 probes the toolchain (`cargo --version`, `rustc --version`) and the `bevy` entry in `Cargo.lock`, and records the result here. |
+| **Installed at pin time** | NOT DETERMINED — `/setup-engine` §3 probes the toolchain (`cargo --version`, `rustc --version`) and records the result here. `project-coherence.sh` reads the resolved `bevy` version from `Cargo.lock` once the crate has built. |
 | **Release Date** | October 2026 (latest patch: 0.20.1, October 2026) |
 | **Minimum Rust Version** | 1.97.1 (0.20.0 and 0.20.1) |
 | **Project Pinned** | 2026-11-02 |
